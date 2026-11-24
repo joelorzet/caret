@@ -69,6 +69,7 @@ pub(crate) struct RawTerminal {
     pub word_separators: Option<String>,
     pub confirm_close: Option<bool>,
     pub highlight_input: Option<bool>,
+    pub clipboard_write: Option<bool>,
     pub mouse: Option<bool>,
 }
 

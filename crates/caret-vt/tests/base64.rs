@@ -1,4 +1,4 @@
-use caret_app::base64;
+use caret_vt::{base64, unbase64};
 
 /// The vectors RFC 4648 gives, which are what every decoder is written
 /// against. Padding is the part implementations get wrong.
@@ -80,4 +80,71 @@ fn decode(text: &str) -> Vec<u8> {
         }
     }
     out
+}
+
+// The same vectors in reverse, since a decoder that cannot read what the
+// encoder wrote is no decoder at all.
+#[test]
+fn the_published_vectors_decode_as_published() {
+    for (plain, encoded) in [
+        ("", ""),
+        ("f", "Zg=="),
+        ("fo", "Zm8="),
+        ("foo", "Zm9v"),
+        ("foob", "Zm9vYg=="),
+        ("fooba", "Zm9vYmE="),
+        ("foobar", "Zm9vYmFy"),
+    ] {
+        assert_eq!(
+            unbase64(encoded).as_deref(),
+            Some(plain.as_bytes()),
+            "{encoded}"
+        );
+    }
+}
+
+#[test]
+fn anything_the_encoder_wrote_reads_back_byte_for_byte() {
+    let samples: [&[u8]; 5] = [
+        b"",
+        b"a",
+        b"hello, world",
+        "accents and an emoji: é 🎉".as_bytes(),
+        &[0, 1, 2, 250, 251, 252, 253, 254, 255],
+    ];
+    for bytes in samples {
+        assert_eq!(unbase64(&base64(bytes)).as_deref(), Some(bytes));
+    }
+}
+
+// This decodes whatever a program in a pane sends, so it refuses rather
+// than guesses.
+#[test]
+fn what_is_not_base64_is_refused() {
+    for text in [
+        "Zm9v*",
+        "Zg=",
+        "Z",
+        "Zm9vYg=x",
+        "not base64 at all!",
+        "=",
+        "../../etc/passwd",
+    ] {
+        assert!(unbase64(text).is_none(), "{text}");
+    }
+}
+
+// Long sequences get wrapped on the way through a terminal.
+// Plenty of senders leave the padding off, and that is unambiguous.
+#[test]
+fn the_unpadded_form_is_accepted() {
+    assert_eq!(unbase64("Zg").as_deref(), Some(&b"f"[..]));
+    assert_eq!(unbase64("Zm8").as_deref(), Some(&b"fo"[..]));
+    assert_eq!(unbase64("Zm9vYmFy").as_deref(), Some(&b"foobar"[..]));
+}
+
+#[test]
+fn whitespace_between_the_characters_is_allowed() {
+    assert_eq!(unbase64("Zm9v YmFy").as_deref(), Some(&b"foobar"[..]));
+    assert_eq!(unbase64("Zm9v\r\nYmFy\n").as_deref(), Some(&b"foobar"[..]));
 }

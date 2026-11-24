@@ -82,3 +82,16 @@ fn looking_for_updates_is_on_by_default_and_the_interval_is_held_in_range() {
     let (patient, _) = parse("[update]\ninterval_hours = 100000\n");
     assert_eq!(patient.update.interval_hours, 720);
 }
+
+// A program in a pane may put text on the clipboard, because that is how an
+// editor's yank reaches it. Reading is a different matter and is never
+// allowed, with or without this.
+#[test]
+fn a_pane_may_write_the_clipboard_unless_told_otherwise() {
+    let (config, _) = parse("");
+    assert!(config.terminal.clipboard_write);
+
+    let (off, problems) = parse("[terminal]\nclipboard_write = false\n");
+    assert!(!off.terminal.clipboard_write);
+    assert!(problems.is_empty());
+}

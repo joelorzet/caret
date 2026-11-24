@@ -4,6 +4,8 @@ use crate::prelude::*;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+use caret_vt::base64;
+
 /// Puts `text` on the system clipboard.
 ///
 /// Which clipboard that is depends on who owns the screen. Inside another
@@ -108,46 +110,4 @@ fn write_command() -> Option<(&'static str, &'static [&'static str])> {
 #[cfg(not(unix))]
 fn read_command() -> Option<(&'static str, &'static [&'static str])> {
     None
-}
-
-/// Encodes bytes as base64, which is how OSC 52 carries a selection.
-///
-/// Nothing here is about written language. OSC 52 is a text protocol, so
-/// arbitrary bytes have to travel as printable characters, and base64 is the
-/// encoding it specifies. The text is already UTF-8 by the time it arrives,
-/// so every script encodes the same way; what comes back out is the bytes
-/// that went in.
-pub fn base64(data: &[u8]) -> String {
-    /// The 64 printable characters base64 maps its six-bit groups onto, in
-    /// the order RFC 4648 gives them. This is a wire format, not a choice:
-    /// a different order would decode to different bytes at the other end.
-    const DIGITS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    /// Three bytes in, four characters out.
-    const GROUP: usize = 3;
-    const ENCODED: usize = 4;
-    /// Six bits per character, and the mask that takes them.
-    const BITS: u32 = 6;
-    const MASK: u32 = (1 << BITS) - 1;
-    /// What stands in for a group that was not full.
-    const PAD: char = '=';
-
-    let mut out = String::with_capacity(data.len().div_ceil(GROUP) * ENCODED);
-    for chunk in data.chunks(GROUP) {
-        let bytes = [
-            chunk[0],
-            chunk.get(1).copied().unwrap_or(0),
-            chunk.get(2).copied().unwrap_or(0),
-        ];
-        let packed =
-            (bytes[0] as u32) << (BITS * 2 + 4) | (bytes[1] as u32) << (BITS + 2) | bytes[2] as u32;
-
-        // The high six bits first, then down. The last two characters are
-        // padding when the group they would describe was not there.
-        let digit = |shift: u32| DIGITS[(packed >> shift & MASK) as usize] as char;
-        out.push(digit(BITS * 3));
-        out.push(digit(BITS * 2));
-        out.push(if chunk.len() > 1 { digit(BITS) } else { PAD });
-        out.push(if chunk.len() > 2 { digit(0) } else { PAD });
-    }
-    out
 }

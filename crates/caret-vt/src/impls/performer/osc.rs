@@ -8,7 +8,15 @@ mod code {
     pub const TITLE: &[u8] = b"2";
     pub const WORKING_DIRECTORY: &[u8] = b"7";
     pub const SHELL_INTEGRATION: &[u8] = b"133";
+    pub const CLIPBOARD: &[u8] = b"52";
 }
+
+/// How much encoded clipboard text to accept at once.
+///
+/// A megabyte of base64 is three quarters of a megabyte of text, which is
+/// more than anybody means to copy and enough to notice if a program is
+/// filling the clipboard on purpose.
+const MAX_CLIPBOARD: usize = 1 << 20;
 
 /// Shell-integration marks within OSC 133.
 mod mark {
@@ -38,6 +46,27 @@ impl Performer<'_> {
             // Shell integration marks; the prompt boundary is the useful one.
             code::SHELL_INTEGRATION if params.get(1) == Some(&mark::PROMPT_START) => {
                 self.term.push_event(TerminalEvent::PromptMarked);
+            }
+
+            // A program asking for text to go on the clipboard. Reading
+            // it back is never answered: a program that can ask what is on
+            // the clipboard can read what was copied somewhere else
+            // entirely, and no amount of convenience is worth that.
+            code::CLIPBOARD => {
+                let Some(data) = params.get(2) else { return };
+                if data.first() == Some(&b'?') {
+                    return;
+                }
+                if data.len() > MAX_CLIPBOARD {
+                    return;
+                }
+                let Some(bytes) = crate::unbase64(&String::from_utf8_lossy(data)) else {
+                    return;
+                };
+                let Ok(text) = String::from_utf8(bytes) else {
+                    return;
+                };
+                self.term.push_event(TerminalEvent::ClipboardWrite(text));
             }
 
             // The icon name, palette writes and colour queries are parsed
