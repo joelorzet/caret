@@ -1,7 +1,9 @@
 #[allow(unused_imports)]
 use crate::prelude::*;
 
-use caret_render::{BlockShape, BoxArms, BoxCorner, BoxGlyph, CellMetrics, GlyphCache, GlyphStyle};
+use caret_render::{
+    BlockShape, BoxArms, BoxCorner, BoxGlyph, CellMetrics, Glyph, GlyphCache, GlyphStyle, MAX_RUN,
+};
 
 /// Draws a composed frame into a 32-bit pixel buffer.
 ///
@@ -13,6 +15,11 @@ pub struct Painter {
     pub padding: usize,
     /// Draw box-drawing characters as rectangles rather than from the font.
     pub builtin_boxes: bool,
+    /// Let the font join characters into the single glyph it has for them.
+    pub ligatures: bool,
+    /// Which columns of the row being drawn are part of a joined glyph.
+    /// Kept here so a frame does not allocate one of these per row.
+    plan: Vec<Slot>,
     /// Pixels reserved above the grid for chrome the painter does not own.
     pub chrome: usize,
 }
@@ -29,6 +36,8 @@ impl Painter {
             cache,
             padding,
             builtin_boxes,
+            ligatures: false,
+            plan: Vec::new(),
             chrome: 0,
         }
     }
@@ -157,6 +166,37 @@ impl Painter {
             if top >= height {
                 break;
             }
+            self.plan_row(surface, row, cols);
+
+            // Every background of the row first, then every glyph. A glyph
+            // may have more ink than the cell it advances by, and a joined
+            // shape is drawn across the cells of its run on purpose; filling
+            // each background just before its own glyph would wipe out
+            // whatever the cell to the left had already drawn there.
+            for col in 0..cols {
+                let Some(cell) = surface.get(col, row) else {
+                    continue;
+                };
+                let left = self.padding + col as usize * cell_w;
+                if left >= width {
+                    break;
+                }
+                let base = surface.grapheme(&cell).base();
+                // A rounded corner carries its own background, curved to
+                // match; filling the cell square first would leave the panel
+                // poking out past the arc.
+                if matches!(
+                    BoxGlyph::of(base).filter(|_| self.builtin_boxes),
+                    Some(BoxGlyph::Arc(_))
+                ) {
+                    // The arc paints its own curved background.
+                } else if cell.round.is_empty() {
+                    canvas.fill(left, top, (cell_w, cell_h), cell.bg);
+                } else {
+                    fill_rounded(&mut canvas, (left, top), (cell_w, cell_h), &cell);
+                }
+            }
+
             for col in 0..cols {
                 let Some(cell) = surface.get(col, row) else {
                     continue;
@@ -168,16 +208,6 @@ impl Painter {
 
                 let grapheme = surface.grapheme(&cell);
                 let shape = BoxGlyph::of(grapheme.base()).filter(|_| self.builtin_boxes);
-                // A rounded corner carries its own background, curved to
-                // match; filling the cell square first would leave the panel
-                // poking out past the arc.
-                if matches!(shape, Some(BoxGlyph::Arc(_))) {
-                    // The arc paints its own curved background.
-                } else if cell.round.is_empty() {
-                    canvas.fill(left, top, (cell_w, cell_h), cell.bg);
-                } else {
-                    fill_rounded(&mut canvas, (left, top), (cell_w, cell_h), &cell);
-                }
                 let base = grapheme.base();
                 let drawable =
                     base != ' ' && base != '\0' && !cell.flags.contains(Flags::WIDE_TAIL);
@@ -194,29 +224,46 @@ impl Painter {
                             cell.fg,
                             cell.bg,
                         ),
-                        None => {
-                            // A wide glyph is allowed the cell it advances
-                            // by and the tail cell that belongs to it.
-                            let wide = surface
-                                .get(col + 1, row)
-                                .is_some_and(|next| next.flags.contains(Flags::WIDE_TAIL));
-                            let span = (cell_w * if wide { 2 } else { 1 }, cell_h);
-                            // The base first, then whatever is written on
-                            // it: a combining glyph advances by nothing and
-                            // is drawn to sit over the character before it,
-                            // so it goes at the same origin.
-                            for ch in grapheme.chars() {
-                                draw_glyph(
-                                    &mut self.cache,
-                                    &mut canvas,
-                                    (left, top),
-                                    span,
-                                    self.baseline,
-                                    ch,
-                                    &cell,
-                                );
+                        None => match self.plan.get(col as usize).copied() {
+                            // The cells after the first are the rest of a
+                            // glyph that has already been drawn across them.
+                            Some(Slot::Inside) => {}
+                            Some(Slot::Start { glyph, run }) => {
+                                let ink = Ink {
+                                    pen: (left, top),
+                                    across: (
+                                        self.padding + run.0 as usize * cell_w,
+                                        self.padding + run.1 as usize * cell_w,
+                                    ),
+                                    down: (top, top + cell_h),
+                                    baseline: self.baseline,
+                                };
+                                draw_shaped(&mut self.cache, &mut canvas, ink, glyph, &cell);
                             }
-                        }
+                            _ => {
+                                // A wide glyph is allowed the cell it
+                                // advances by and the tail cell that belongs
+                                // to it.
+                                let wide = surface
+                                    .get(col + 1, row)
+                                    .is_some_and(|next| next.flags.contains(Flags::WIDE_TAIL));
+                                let width = cell_w * if wide { 2 } else { 1 };
+                                let ink = Ink {
+                                    pen: (left, top),
+                                    across: (left, left + width),
+                                    down: (top, top + cell_h),
+                                    baseline: self.baseline,
+                                };
+                                // The base first, then whatever is written
+                                // on it: a combining glyph advances by
+                                // nothing and is drawn to sit over the
+                                // character before it, so it goes at the
+                                // same origin.
+                                for ch in grapheme.chars() {
+                                    draw_glyph(&mut self.cache, &mut canvas, ink, ch, &cell);
+                                }
+                            }
+                        },
                     }
                 }
                 if cell.flags.any_underline() {
@@ -397,47 +444,189 @@ fn draw_block(
     }
 }
 
+/// What a column draws: its own character, a glyph the font joined several
+/// characters into, or nothing because the glyph beside it covers this one.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Slot {
+    Own,
+    Start {
+        glyph: u16,
+        /// The columns of the run this glyph belongs to. A font is free to
+        /// draw a joined shape anywhere across its run: some put the whole
+        /// of `!=` in the first cell's glyph and leave the second blank,
+        /// and some let a half start a pixel to the left of its own cell.
+        /// Clipping to the cell would cut those in half, and clipping to
+        /// the run cannot spill onto anything drawn differently, because a
+        /// run is cells drawn alike.
+        run: (u16, u16),
+    },
+    Inside,
+}
+
+impl Painter {
+    /// Works out which columns of a row the font would join into one glyph.
+    ///
+    /// Only runs of cells that look exactly alike are offered: a cell with
+    /// its own background, a selected one, a wide character or a cell
+    /// holding more than one character all end the run, because a joined
+    /// glyph cannot show two backgrounds or be half selected. That is also
+    /// what makes the fallback free: the run simply ends and both halves
+    /// draw their own characters.
+    fn plan_row(&mut self, surface: &Surface, row: u16, cols: u16) {
+        self.plan.clear();
+        if !self.ligatures {
+            return;
+        }
+        self.plan.resize(cols as usize, Slot::Own);
+
+        for (start, text) in runs_in(surface, row, cols) {
+            let Some(first) = surface.get(start, row) else {
+                continue;
+            };
+            let Some(pieces) = self.cache.pieces(&text, style_of(&first)) else {
+                continue;
+            };
+
+            let run = (start, start + text.chars().count() as u16);
+            let mut col = start;
+            for piece in pieces {
+                self.plan[col as usize] = Slot::Start {
+                    glyph: piece.glyph,
+                    run,
+                };
+                for inside in col + 1..col + piece.cells {
+                    self.plan[inside as usize] = Slot::Inside;
+                }
+                col += piece.cells;
+            }
+        }
+    }
+}
+
+/// The runs of a row that are worth asking the font about: spans of cells
+/// drawn exactly alike, long enough to join, and holding at least one of
+/// the characters ligatures are made of.
+///
+/// A cell with its own background, a selected one, a wide character and a
+/// cell holding more than one character all end a run, because a joined
+/// shape cannot show two backgrounds or be half selected. That is what
+/// makes the fallback free: the run ends and both sides draw their own
+/// characters, which is what they did before any of this.
+pub fn runs_in(surface: &Surface, row: u16, cols: u16) -> Vec<(u16, String)> {
+    let mut runs = Vec::new();
+    let mut at = 0u16;
+    while at < cols {
+        let start = at;
+        let Some(first) = surface.get(start, row) else {
+            break;
+        };
+        at += 1;
+        if !joinable(surface, &first) {
+            continue;
+        }
+
+        let mut text = String::with_capacity(MAX_RUN);
+        text.push(first.ch);
+        while at < cols && text.len() < MAX_RUN {
+            let Some(cell) = surface.get(at, row) else {
+                break;
+            };
+            if !alike(&first, &cell) || !joinable(surface, &cell) {
+                break;
+            }
+            text.push(cell.ch);
+            at += 1;
+        }
+
+        if text.chars().count() >= 2 && GlyphCache::may_ligate(&text) {
+            runs.push((start, text));
+        }
+    }
+    runs
+}
+
+/// Whether two cells are drawn the same way, which is what a run needs.
+fn alike(a: &SurfaceCell, b: &SurfaceCell) -> bool {
+    a.fg == b.fg && a.bg == b.bg && a.flags == b.flags && a.under == b.under
+}
+
+/// Whether a cell can be part of a joined glyph at all.
+fn joinable(surface: &Surface, cell: &SurfaceCell) -> bool {
+    !cell
+        .flags
+        .intersects(Flags::WIDE.union(Flags::WIDE_TAIL).union(Flags::CLUSTER))
+        && cell.round.is_empty()
+        && !matches!(surface.grapheme(cell), Grapheme::Many(_))
+}
+
+fn style_of(cell: &SurfaceCell) -> GlyphStyle {
+    GlyphStyle::of(
+        cell.flags.contains(Flags::BOLD),
+        cell.flags.contains(Flags::ITALIC),
+    )
+}
+
+/// Where a glyph is drawn from, and how far its ink is allowed to reach.
+///
+/// The two are not the same: a glyph's ink can be wider or taller than what
+/// it advances by, and a joined shape is drawn across the cells of its run
+/// on purpose.
+#[derive(Clone, Copy)]
+struct Ink {
+    pen: (usize, usize),
+    across: (usize, usize),
+    down: (usize, usize),
+    baseline: usize,
+}
+
+/// Draws a glyph the font joined out of several characters, across the
+/// cells those characters took.
+fn draw_shaped(cache: &mut GlyphCache, canvas: &mut Canvas, ink: Ink, id: u16, cell: &SurfaceCell) {
+    let glyph = cache.shaped_glyph(id, style_of(cell));
+    if glyph.width == 0 || glyph.height == 0 {
+        return;
+    }
+    blit_coverage(canvas, ink, glyph, cell.fg);
+}
+
 /// Draws a cell's character, clipped to the cell.
 ///
 /// A glyph's ink can be wider or taller than the cell it advances by, and
 /// without a clip it spills onto the neighbour: over the end of a selected
 /// row, past the edge of a panel, into the next column's background.
-fn draw_glyph(
-    cache: &mut GlyphCache,
-    canvas: &mut Canvas,
-    origin: (usize, usize),
-    span: (usize, usize),
-    baseline: usize,
-    ch: char,
-    cell: &SurfaceCell,
-) {
-    let style = GlyphStyle::of(
-        cell.flags.contains(Flags::BOLD),
-        cell.flags.contains(Flags::ITALIC),
-    );
-    let glyph = cache.glyph(ch, style);
+fn draw_glyph(cache: &mut GlyphCache, canvas: &mut Canvas, ink: Ink, ch: char, cell: &SurfaceCell) {
+    let glyph = cache.glyph(ch, style_of(cell));
     if glyph.width == 0 || glyph.height == 0 {
         return;
     }
+    blit_coverage(canvas, ink, glyph, cell.fg);
+}
 
-    let x0 = origin.0 as i32 + glyph.left;
-    let y0 = origin.1 as i32 + baseline as i32 - glyph.top;
-
-    let (right, bottom) = ((origin.0 + span.0) as i32, (origin.1 + span.1) as i32);
+/// Blends a rasterised glyph into the canvas, drawn from the pen and kept
+/// inside what it is allowed.
+fn blit_coverage(canvas: &mut Canvas, ink: Ink, glyph: &Glyph, colour: Rgb) {
+    let Ink {
+        pen,
+        across,
+        down,
+        baseline,
+    } = ink;
+    let x0 = pen.0 as i32 + glyph.left;
+    let y0 = pen.1 as i32 + baseline as i32 - glyph.top;
 
     for gy in 0..glyph.height {
         let y = y0 + gy as i32;
-        if y < origin.1 as i32 || y >= bottom {
+        if y < down.0 as i32 || y >= down.1 as i32 {
             continue;
         }
         for gx in 0..glyph.width {
             let x = x0 + gx as i32;
-            if x < origin.0 as i32 || x >= right {
+            if x < across.0 as i32 || x >= across.1 as i32 {
                 continue;
             }
             let alpha = glyph.coverage[gy * glyph.width + gx];
             if alpha > 0 {
-                canvas.blend(x as usize, y as usize, cell.fg, alpha);
+                canvas.blend(x as usize, y as usize, colour, alpha);
             }
         }
     }

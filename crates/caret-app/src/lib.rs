@@ -24,4 +24,5 @@ pub use crate::impls::host::links::{marked_target, opens_links};
 pub use crate::impls::host::palette::{group_rows, palette_rect};
 pub use crate::impls::host::session::{assign_pane_numbers, login_name, path_with};
 pub use crate::impls::run::run;
+pub use crate::impls::window::paint::runs_in;
 pub use crate::types::session::Session;

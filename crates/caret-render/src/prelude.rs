@@ -12,5 +12,6 @@ pub(crate) use crate::types::font_family::*;
 pub(crate) use crate::types::font_library::*;
 pub(crate) use crate::types::glyph::*;
 pub(crate) use crate::types::glyph_cache::*;
+pub(crate) use crate::types::piece::*;
 pub(crate) use caret_core::{Cell, Flags, Rgb};
 pub(crate) use caret_theme::Theme;

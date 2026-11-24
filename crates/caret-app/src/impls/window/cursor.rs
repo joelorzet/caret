@@ -19,6 +19,7 @@ impl Painter {
         canvas: &mut Canvas,
         cursor: CursorPaint,
         under: Option<SurfaceCell>,
+        text: Option<&str>,
     ) {
         if cursor.alpha == 0 {
             return;
@@ -48,18 +49,17 @@ impl Painter {
 
         let covers_cell = cursor.shape == CursorShape::Block && cursor.alpha > NEARLY_OPAQUE;
         if let Some(cell) = under.filter(|_| covers_cell) {
-            if cell.ch != ' ' && cell.ch != '\0' {
-                let style = GlyphStyle::of(
-                    cell.flags.contains(Flags::BOLD),
-                    cell.flags.contains(Flags::ITALIC),
-                );
-                self.blit(
-                    canvas,
-                    (left as i32, top as i32),
-                    cell.ch,
-                    cursor.text,
-                    style,
-                );
+            let style = GlyphStyle::of(
+                cell.flags.contains(Flags::BOLD),
+                cell.flags.contains(Flags::ITALIC),
+            );
+            // Everything the cell shows, so a letter under the cursor keeps
+            // its accents.
+            for ch in text.unwrap_or_default().chars() {
+                if ch == ' ' || ch == '\0' {
+                    continue;
+                }
+                self.blit(canvas, (left as i32, top as i32), ch, cursor.text, style);
             }
         }
     }
