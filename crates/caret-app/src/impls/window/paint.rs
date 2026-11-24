@@ -166,7 +166,8 @@ impl Painter {
                     break;
                 }
 
-                let shape = BoxGlyph::of(cell.ch).filter(|_| self.builtin_boxes);
+                let grapheme = surface.grapheme(&cell);
+                let shape = BoxGlyph::of(grapheme.base()).filter(|_| self.builtin_boxes);
                 // A rounded corner carries its own background, curved to
                 // match; filling the cell square first would leave the panel
                 // poking out past the arc.
@@ -177,8 +178,9 @@ impl Painter {
                 } else {
                     fill_rounded(&mut canvas, (left, top), (cell_w, cell_h), &cell);
                 }
+                let base = grapheme.base();
                 let drawable =
-                    cell.ch != ' ' && cell.ch != '\0' && !cell.flags.contains(Flags::WIDE_TAIL);
+                    base != ' ' && base != '\0' && !cell.flags.contains(Flags::WIDE_TAIL);
                 if drawable {
                     // A box character from the font stops short of the cell
                     // edges, so a column of them reads as a dotted line.
@@ -199,14 +201,21 @@ impl Painter {
                                 .get(col + 1, row)
                                 .is_some_and(|next| next.flags.contains(Flags::WIDE_TAIL));
                             let span = (cell_w * if wide { 2 } else { 1 }, cell_h);
-                            draw_glyph(
-                                &mut self.cache,
-                                &mut canvas,
-                                (left, top),
-                                span,
-                                self.baseline,
-                                &cell,
-                            )
+                            // The base first, then whatever is written on
+                            // it: a combining glyph advances by nothing and
+                            // is drawn to sit over the character before it,
+                            // so it goes at the same origin.
+                            for ch in grapheme.chars() {
+                                draw_glyph(
+                                    &mut self.cache,
+                                    &mut canvas,
+                                    (left, top),
+                                    span,
+                                    self.baseline,
+                                    ch,
+                                    &cell,
+                                );
+                            }
                         }
                     }
                 }
@@ -399,13 +408,14 @@ fn draw_glyph(
     origin: (usize, usize),
     span: (usize, usize),
     baseline: usize,
+    ch: char,
     cell: &SurfaceCell,
 ) {
     let style = GlyphStyle::of(
         cell.flags.contains(Flags::BOLD),
         cell.flags.contains(Flags::ITALIC),
     );
-    let glyph = cache.glyph(cell.ch, style);
+    let glyph = cache.glyph(ch, style);
     if glyph.width == 0 || glyph.height == 0 {
         return;
     }

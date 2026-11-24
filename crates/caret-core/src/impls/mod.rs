@@ -1,8 +1,10 @@
 pub mod cell;
+pub mod cluster_table;
 pub mod color;
 pub mod cursor_shape;
 pub mod cursor_style;
 pub mod flags;
+pub mod grapheme;
 pub mod link_id;
 pub mod link_table;
 pub mod modes;

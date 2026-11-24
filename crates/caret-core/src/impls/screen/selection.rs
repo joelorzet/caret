@@ -49,8 +49,15 @@ impl Screen {
                 None => &slice[..0],
             };
             for cell in trimmed {
-                if !cell.flags.contains(Flags::WIDE_TAIL) {
-                    out.push(if cell.ch == '\0' { ' ' } else { cell.ch });
+                if cell.flags.contains(Flags::WIDE_TAIL) {
+                    continue;
+                }
+                // A letter and its accent are copied as the one thing they
+                // are shown as, not as the letter alone.
+                match self.grapheme(cell) {
+                    Grapheme::One('\0') => out.push(' '),
+                    Grapheme::One(ch) => out.push(ch),
+                    Grapheme::Many(text) => out.push_str(text),
                 }
             }
 
@@ -70,8 +77,10 @@ impl Screen {
         let cells = self.logical_line(row);
         let col = point.col.min(self.cols.saturating_sub(1)) as usize;
 
-        let is_separator =
-            |cell: &Cell| cell.ch == '\0' || cell.ch == ' ' || separators.contains(cell.ch);
+        let is_separator = |cell: &Cell| {
+            let base = self.grapheme(cell).base();
+            base == '\0' || base == ' ' || separators.contains(base)
+        };
         if cells.get(col).is_none_or(is_separator) {
             return None;
         }

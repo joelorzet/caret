@@ -11,3 +11,4 @@ repository.workspace = true
 caret-core.workspace = true
 vte.workspace = true
 unicode-width = "0.2"
+unicode-normalization = "0.1"

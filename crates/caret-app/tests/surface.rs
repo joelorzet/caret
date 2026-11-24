@@ -1,6 +1,7 @@
 use caret_app::types::corners::Corners;
 use caret_app::types::surface::Surface;
-use caret_core::Rgb;
+use caret_app::types::surface_cell::SurfaceCell;
+use caret_core::{Flags, Grapheme, Rgb};
 use caret_layout::Rect;
 
 const BG: Rgb = Rgb::new(0, 0, 0);
@@ -100,4 +101,38 @@ fn writing_over_nothing_leaves_the_surface_alone() {
         caret_app::types::style::Style::new(BG, FILL),
     );
     assert_eq!(surface.get(0, 0).expect("cell").ch, ' ');
+}
+
+// A frame reaches the window, or the terminal it was started from, as one
+// write: whatever a cell shows has to survive that trip whole.
+#[test]
+fn a_cell_showing_more_than_one_character_keeps_them_all() {
+    let mut surface = Surface::new(6, 1, BG);
+    let handle = surface.hold("q\u{0330}");
+    surface.set(
+        0,
+        0,
+        SurfaceCell {
+            ch: handle,
+            fg: FILL,
+            bg: BG,
+            flags: Flags::NONE,
+            round: Corners::NONE,
+            under: BG,
+        },
+    );
+
+    let cell = surface.get(0, 0).expect("the cell");
+    assert_eq!(surface.grapheme(&cell), Grapheme::Many("q\u{0330}"));
+    assert!(
+        surface.render().contains("q\u{0330}"),
+        "and is written out as both characters"
+    );
+}
+
+#[test]
+fn an_ordinary_cell_is_its_own_character() {
+    let surface = Surface::new(4, 1, BG);
+    let cell = surface.get(0, 0).expect("the cell");
+    assert_eq!(surface.grapheme(&cell), Grapheme::One(' '));
 }

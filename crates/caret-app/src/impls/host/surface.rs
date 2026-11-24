@@ -15,6 +15,29 @@ impl Surface {
             cols,
             rows,
             cells: vec![blank; cols as usize * rows as usize],
+            clusters: Vec::new(),
+        }
+    }
+
+    /// Takes a cell's cluster text for this frame and gives back the
+    /// character the cell carries in its place.
+    pub fn hold(&mut self, text: &str) -> char {
+        match cluster_handle(self.clusters.len()) {
+            Some(handle) => {
+                self.clusters.push(text.into());
+                handle
+            }
+            // Past what a handle can name, the base character alone is
+            // still the right thing to draw.
+            None => text.chars().next().unwrap_or(' '),
+        }
+    }
+
+    /// What a cell shows, which is its character unless it is a handle.
+    pub fn grapheme(&self, cell: &SurfaceCell) -> Grapheme<'_> {
+        match cluster_index(cell.ch).and_then(|i| self.clusters.get(i)) {
+            Some(text) => Grapheme::Many(text),
+            None => Grapheme::One(cell.ch),
         }
     }
 
@@ -240,7 +263,11 @@ impl Surface {
                     ));
                     last = Some(style);
                 }
-                out.push(if cell.ch == '\0' { ' ' } else { cell.ch });
+                match self.grapheme(&cell) {
+                    Grapheme::One('\0') => out.push(' '),
+                    Grapheme::One(ch) => out.push(ch),
+                    Grapheme::Many(text) => out.push_str(text),
+                }
                 x += 1;
             }
         }

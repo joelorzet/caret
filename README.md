@@ -508,8 +508,9 @@ dependencies in `caret-core` or `caret-layout`.
 - **Ligature shaping.** `font.ligatures` is accepted but the window draws one
   glyph per cell, so `!=` stays two glyphs.
 - **GPU rendering.** Everything is rasterised and blended on the CPU.
-- **Combining characters, DCS sequences, character sets.** See
-  [docs/limitations.md](docs/limitations.md).
+- **Shaping, and DCS sequences and character sets.** A letter and its marks
+  share a cell, but a script whose letters reshape each other is not drawn
+  the way it should be. See [docs/limitations.md](docs/limitations.md).
 - **Windows.** It needs a ConPTY backend. The seam is in one crate; see
   [docs/platforms.md](docs/platforms.md).
 

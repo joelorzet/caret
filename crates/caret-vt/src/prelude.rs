@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 pub(crate) use caret_core::{
-    Color, CursorStyle, EraseMode, Flags, Modes, Screen, Terminal, TerminalEvent,
+    Color, CursorStyle, EraseMode, Flags, Grapheme, Modes, Screen, Terminal, TerminalEvent,
 };
 
 pub(crate) use crate::enums::dec_mode::*;

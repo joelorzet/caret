@@ -1,4 +1,5 @@
 pub mod access;
+pub mod clusters;
 pub mod damage;
 pub mod editing;
 pub mod lifecycle;
