@@ -14,11 +14,11 @@ pub mod types;
 mod prelude;
 
 pub use crate::impls::host::draw::paste::notes as paste_notes;
-pub use crate::impls::host::links::opens_links;
 pub use crate::impls::host::draw::{
     agent_rect, arrange_canvas, arrange_rect, dock_body, join_dividers,
 };
 pub use crate::impls::host::encode::encode_for_child;
+pub use crate::impls::host::links::opens_links;
 pub use crate::impls::host::palette::{group_rows, palette_rect};
 pub use crate::impls::host::session::{assign_pane_numbers, login_name, path_with};
 pub use crate::impls::run::run;
