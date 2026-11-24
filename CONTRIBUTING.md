@@ -14,13 +14,13 @@ cargo run -- run        # the terminal, in its own window
 cargo run -- inline     # inside the terminal you are already in
 ```
 
-Rust 1.85 or newer, which is the version CI checks against as well as stable.
+Rust 1.87 or newer, which is the version CI checks against as well as stable.
 macOS and Linux both build; Windows needs a ConPTY backend and currently fails
 to compile with a message saying so.
 
 ## What CI will run
 
-These three, on Linux and macOS, on stable and on 1.85. A pull request cannot
+These three, on Linux and macOS, on stable and on 1.87. A pull request cannot
 merge until they pass, so run them before you open one:
 
 ```sh

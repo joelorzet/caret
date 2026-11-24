@@ -15,9 +15,7 @@ impl Blink {
     }
 
     pub fn visible(&self) -> bool {
-        // `is_multiple_of` would read better and is newer than the minimum
-        // Rust this builds on.
-        (self.since.elapsed().as_millis() / Self::PHASE.as_millis()) % 2 == 0
+        (self.since.elapsed().as_millis() / Self::PHASE.as_millis()).is_multiple_of(2)
     }
 
     /// Whether the phase flipped since the last call, so the window redraws

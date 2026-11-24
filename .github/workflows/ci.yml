@@ -76,12 +76,12 @@ jobs:
         run: cargo test --workspace --locked
 
   msrv:
-    name: minimum supported rust (1.85)
+    name: minimum supported rust (1.87)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: dtolnay/rust-toolchain@1.87.0
 
       - name: System libraries
         run: |

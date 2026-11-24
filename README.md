@@ -10,7 +10,7 @@ and a window that rasterises every glyph itself.
 
 [![ci](https://github.com/joelorzet/caret/actions/workflows/ci.yml/badge.svg)](https://github.com/joelorzet/caret/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![rust](https://img.shields.io/badge/rust-1.85%2B-orange)](https://www.rust-lang.org)
+[![rust](https://img.shields.io/badge/rust-1.87%2B-orange)](https://www.rust-lang.org)
 [![tests](https://img.shields.io/badge/tests-659-brightgreen)](#development)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-lightgrey)](docs/platforms.md)
 
@@ -87,7 +87,7 @@ cd caret
 cargo install --path .
 ```
 
-Rust 1.85 or newer. macOS and Linux are supported; Windows needs a ConPTY
+Rust 1.87 or newer. macOS and Linux are supported; Windows needs a ConPTY
 backend and currently fails to compile with a message saying so. See
 [docs/platforms.md](docs/platforms.md).
 
