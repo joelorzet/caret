@@ -4,7 +4,7 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
-## Unreleased
+## 0.1.3
 
 ### Added
 
