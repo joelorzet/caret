@@ -322,6 +322,10 @@ impl Session {
         }
         self.config = loaded.config;
 
+        // The shell may be a different one now, and its aliases are its own.
+        self.commands = CommandIndex::from_path();
+        self.begin_shell_names();
+
         for (_, pane) in self.panes.iter_mut() {
             pane.terminal.screen_mut().damage_all();
         }

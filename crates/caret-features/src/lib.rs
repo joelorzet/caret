@@ -24,6 +24,7 @@ pub use crate::enums::shell_role::*;
 pub use crate::enums::token_kind::*;
 pub use crate::impls::history;
 pub use crate::impls::shell_line::shell_spans;
+pub use crate::impls::shell_names::shell_names;
 pub use crate::types::autocomplete::*;
 pub use crate::types::command_index::*;
 pub use crate::types::entry::*;

@@ -75,6 +75,7 @@ impl Session {
             rearrange: None,
             update_check: None,
             update_install: None,
+            shell_names: None,
             message: String::new(),
             message_shown: String::new(),
             message_until: None,
@@ -89,6 +90,7 @@ impl Session {
         }
 
         session.begin_update_check(false);
+        session.begin_shell_names();
 
         let first = session.workspace.active_pane();
         let area = session.center_rect();
@@ -683,6 +685,7 @@ impl Session {
         self.age_message();
         self.settle_update_check();
         self.settle_update_install();
+        self.settle_shell_names();
         self.settle_pty_sizes();
         let mut events = Vec::new();
         let mut ready = Vec::new();

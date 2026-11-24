@@ -6,6 +6,13 @@ and a patch never does.
 
 ## Unreleased
 
+### Added
+
+- **A line that runs through an alias or a shell function is coloured** like
+  anything else that runs. The shell is asked once, in the background, what
+  names it knows, and they join what is on `PATH`. A typo still stays plain,
+  which is the property worth keeping.
+
 ### Fixed
 
 - **Panes start a login shell**, the way every other terminal does. Without
