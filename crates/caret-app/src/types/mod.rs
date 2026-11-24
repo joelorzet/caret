@@ -5,6 +5,7 @@ pub mod cursor_paint;
 pub mod divider_drag;
 pub mod input_decoder;
 pub mod key_press;
+pub mod launch;
 pub mod mouse_event;
 pub mod palette;
 pub mod palette_item;

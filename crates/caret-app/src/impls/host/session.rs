@@ -138,6 +138,18 @@ impl Session {
         self.spawn_shell(id, None, cols, rows)
     }
 
+    /// The configured shell, started the way a terminal starts one: as a
+    /// login shell, so it reads the profile its PATH is written in.
+    fn shell_launch(&self, cwd: Option<std::path::PathBuf>) -> Launch {
+        let program = self.config.shell_program();
+        Launch {
+            arg0: Some(login_name(&program)),
+            args: self.config.terminal.shell_args.clone(),
+            program,
+            cwd,
+        }
+    }
+
     /// Starts a shell for `id` in `cwd`, or wherever the focused pane is.
     pub(crate) fn spawn_shell(
         &mut self,
@@ -146,9 +158,7 @@ impl Session {
         cols: u16,
         rows: u16,
     ) -> io::Result<()> {
-        let program = self.config.shell_program();
-        let args = self.config.terminal.shell_args.clone();
-        self.spawn_with(id, program, args, cwd, cols, rows)
+        self.spawn_with(id, self.shell_launch(cwd), cols, rows)
     }
 
     /// Starts `program` for `id`, inheriting the focused pane's directory so a
@@ -160,12 +170,16 @@ impl Session {
     pub(crate) fn spawn_with(
         &mut self,
         id: PaneId,
-        program: String,
-        args: Vec<String>,
-        cwd: Option<std::path::PathBuf>,
+        launch: Launch,
         cols: u16,
         rows: u16,
     ) -> io::Result<()> {
+        let Launch {
+            program,
+            args,
+            arg0,
+            cwd,
+        } = launch;
         let cols = cols.max(1);
         let rows = rows.max(1);
 
@@ -197,6 +211,7 @@ impl Session {
         let spec = PtySpec {
             program,
             args,
+            arg0,
             cwd,
             env: pane_env(),
             cols,
@@ -233,9 +248,7 @@ impl Session {
             .map(|(_, rect)| *rect)
             .unwrap_or(area);
 
-        let program = self.config.shell_program();
-        let args = self.config.terminal.shell_args.clone();
-        self.spawn_with(pane, program, args, Some(dir), rect.w, rect.h)
+        self.spawn_with(pane, self.shell_launch(Some(dir)), rect.w, rect.h)
     }
 
     /// Opens the file in `$EDITOR` in a new pane.
@@ -295,7 +308,17 @@ impl Session {
         self.focus = FocusTarget::Panes;
         self.message = format!(" {program} {}", path.display());
         self.editing.push((pane, path));
-        self.spawn_with(pane, program, args, dir, rect.w, rect.h)
+        self.spawn_with(
+            pane,
+            Launch {
+                program,
+                args,
+                arg0: None,
+                cwd: dir,
+            },
+            rect.w,
+            rect.h,
+        )
     }
 
     /// The pane already editing `path`, if one still is.
@@ -385,9 +408,7 @@ impl Session {
     pub(crate) fn open_tab_in(&mut self, dir: std::path::PathBuf) -> io::Result<()> {
         let (_, pane) = self.workspace.new_tab();
         let area = self.center_rect();
-        let program = self.config.shell_program();
-        let args = self.config.terminal.shell_args.clone();
-        self.spawn_with(pane, program, args, Some(dir), area.w, area.h)
+        self.spawn_with(pane, self.shell_launch(Some(dir)), area.w, area.h)
     }
 
     /// The agent dock's pane. It sits outside the pane tree, so it takes an id
@@ -411,9 +432,12 @@ impl Session {
         let args = self.config.sidebars.agent.args.clone();
         match self.spawn_with(
             Session::AGENT_PANE,
-            command.clone(),
-            args,
-            None,
+            Launch {
+                program: command.clone(),
+                args,
+                arg0: None,
+                cwd: None,
+            },
             rect.w,
             rect.h,
         ) {
@@ -1253,4 +1277,18 @@ pub fn path_with(path: &str, dir: &std::path::Path) -> Option<String> {
         std::env::join_paths(std::iter::once(dir.to_path_buf()).chain(std::env::split_paths(path)))
             .ok()?;
     joined.into_string().ok()
+}
+
+/// What a login shell is called: its own name with a dash in front.
+///
+/// A shell reads its login profile only when invoked that way, and that
+/// profile is where most of a PATH comes from: Homebrew writes itself into
+/// `.zprofile`, so a pane without it cannot find anything installed by it.
+/// Terminals have started their first shell like this since the beginning.
+pub fn login_name(program: &str) -> String {
+    let base = std::path::Path::new(program)
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| program.to_string());
+    format!("-{base}")
 }

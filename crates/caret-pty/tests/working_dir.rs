@@ -8,6 +8,7 @@ fn spawn_in(pool: &mut PtyPool, id: PtyId, dir: &str) {
         &PtySpec {
             program: "/bin/sh".into(),
             args: vec!["-c".into(), "sleep 5".into()],
+            arg0: None,
             cwd: Some(std::path::PathBuf::from(dir)),
             env: Vec::new(),
             cols: 80,

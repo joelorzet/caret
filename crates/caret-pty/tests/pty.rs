@@ -5,6 +5,7 @@ fn spec(program: &str, args: &[&str]) -> PtySpec {
     PtySpec {
         program: program.to_string(),
         args: args.iter().map(|a| a.to_string()).collect(),
+        arg0: None,
         cwd: None,
         env: Vec::new(),
         cols: 40,
