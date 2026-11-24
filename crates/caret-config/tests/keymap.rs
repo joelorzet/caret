@@ -137,7 +137,10 @@ fn shortcuts_are_grouped_and_merge_their_keys() {
 fn bindings_for_finds_every_key_of_an_action() {
     let map = Keymap::default();
     let keys = map.bindings_for(&Action::ToggleZoom);
-    assert!(keys.iter().any(|k| k == "cmd+enter"), "{keys:?}");
+    // Printed the way this platform prints it: a Mac says `cmd`, everything
+    // else says `super`, and what is being tested here is the lookup.
+    let zoom = KeyBinding::parse("cmd+enter").expect("parses").to_string();
+    assert!(keys.contains(&zoom), "{keys:?}");
     assert!(keys.iter().any(|k| k == "ctrl+b z"), "{keys:?}");
     assert!(map.bindings_for(&Action::SelectTab(9)).is_empty());
 }

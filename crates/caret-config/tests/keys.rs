@@ -103,14 +103,14 @@ fn matching_requires_the_other_modifiers() {
 // reading it: `option` on a Mac, which has no Alt key, `alt` elsewhere.
 #[test]
 fn displays_the_way_people_write_it() {
-    let option = if cfg!(target_os = "macos") {
-        "option"
+    let (command, option) = if cfg!(target_os = "macos") {
+        ("cmd", "option")
     } else {
-        "alt"
+        ("super", "alt")
     };
     assert_eq!(
         KeyBinding::parse("cmd+alt+left").unwrap().to_string(),
-        format!("cmd+{option}+left")
+        format!("{command}+{option}+left")
     );
     assert_eq!(KeyBinding::parse("ctrl+b").unwrap().to_string(), "ctrl+b");
     assert_eq!(KeyBinding::parse("%").unwrap().to_string(), "%");
