@@ -7,6 +7,13 @@ use std::os::fd::RawFd;
 /// Bytes read from one ready fd per wake-up.
 const READ_CHUNK: usize = 65_536;
 
+/// How many chunks a pty may hand over on its way out.
+///
+/// A bound rather than a guess: whatever is left in the buffer is finite
+/// because the child is gone, and this stops a pathological case from
+/// holding the loop while the window waits to redraw.
+const DRAIN_LIMIT: usize = 64;
+
 impl PtyPool {
     pub fn new() -> PtyPool {
         PtyPool::default()
@@ -154,6 +161,7 @@ impl PtyPool {
         }
 
         for id in hung_up {
+            self.drain(id, out);
             let status = self
                 .get_mut(id)
                 .and_then(|pty| pty.exit_status())
@@ -174,8 +182,37 @@ impl PtyPool {
             }
         }
         for (id, status) in done {
+            self.drain(id, out);
             self.close(id);
             out.push(PtyEvent::Exited { id, status });
         }
+    }
+
+    /// Hands over whatever a pty still holds, before it is let go.
+    ///
+    /// A short command writes and exits between two wake-ups, so the first
+    /// thing the pool learns about it is that it is dead. Closing on the
+    /// strength of that alone throws away the last thing it said, which for
+    /// anything that finishes in one go is everything it said.
+    fn drain(&mut self, id: PtyId, out: &mut Vec<PtyEvent>) {
+        let mut buf = std::mem::take(&mut self.scratch);
+        buf.resize(READ_CHUNK, 0);
+        for _ in 0..DRAIN_LIMIT {
+            let Some(pty) = self.get_mut(id) else {
+                break;
+            };
+            match pty.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => out.push(PtyEvent::Output {
+                    id,
+                    bytes: buf[..n].to_vec(),
+                }),
+                Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+                // WouldBlock means nothing more is waiting, and a closed pty
+                // reports EIO: either way there is no more to be had.
+                Err(_) => break,
+            }
+        }
+        self.scratch = buf;
     }
 }

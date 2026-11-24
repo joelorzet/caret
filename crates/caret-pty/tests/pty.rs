@@ -207,3 +207,33 @@ fn the_terminal_size_helper_returns_something_sane() {
         assert!(cols > 0 && rows > 0);
     }
 }
+
+// A short command writes and exits in the time between two polls, so the
+// first thing the pool learns about it is that it is dead. Letting it go on
+// the strength of that alone throws away everything it said, which for
+// anything short enough to finish in one go is everything it said at all.
+#[test]
+fn a_child_that_has_already_exited_still_hands_over_what_it_wrote() {
+    let mut pool = PtyPool::new();
+    pool.spawn(
+        PtyId(7),
+        &spec("/bin/sh", &["-c", "echo written-before-exit"]),
+    )
+    .expect("spawn");
+
+    // Long enough that the child is reaped before anything is read.
+    std::thread::sleep(Duration::from_millis(400));
+
+    let events = drain(&mut pool, Duration::from_secs(5));
+    assert!(
+        output(&events).contains("written-before-exit"),
+        "{:?}",
+        output(&events)
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, PtyEvent::Exited { id, .. } if *id == PtyId(7))),
+        "and the exit is still reported"
+    );
+}
