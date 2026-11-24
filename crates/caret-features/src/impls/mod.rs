@@ -7,3 +7,4 @@ pub mod history;
 pub mod language;
 pub mod preview;
 pub mod shell_line;
+pub mod shell_names;

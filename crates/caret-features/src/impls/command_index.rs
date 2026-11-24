@@ -38,12 +38,18 @@ impl CommandIndex {
         CommandIndex { names }
     }
 
+    /// Adds names the shell knows and `PATH` does not: its aliases and its
+    /// functions, which run exactly like anything else.
+    pub fn add(&mut self, names: impl IntoIterator<Item = String>) {
+        self.names.extend(names);
+    }
+
     /// Whether `word` names something that would run.
     ///
     /// A word with a slash in it is a path the person wrote out, so it is
     /// taken at its word rather than stat-ed on every keystroke. Aliases and
-    /// shell functions are not here: the shell knows them and we do not, so
-    /// they read as unrecognised, which errs towards saying nothing.
+    /// functions arrive through `add` once the shell has been asked; until
+    /// then they read as unrecognised, which errs towards saying nothing.
     pub fn contains(&self, word: &str) -> bool {
         if word.is_empty() {
             return false;

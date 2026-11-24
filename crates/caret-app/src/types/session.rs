@@ -85,6 +85,8 @@ pub struct Session {
     pub(crate) update_check: Option<(std::sync::mpsc::Receiver<Outcome>, bool)>,
     /// An install running in the background, and what it has to say.
     pub(crate) update_install: Option<std::sync::mpsc::Receiver<Result<String, String>>>,
+    /// The shell being asked what names it knows.
+    pub(crate) shell_names: Option<std::sync::mpsc::Receiver<Vec<String>>>,
     pub(crate) message: String,
     /// The message as it was last seen, and when it stops being news.
     ///

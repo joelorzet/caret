@@ -15,6 +15,7 @@ pub mod rename;
 pub mod resize_drag;
 pub mod search;
 pub mod session;
+pub mod shell_names;
 pub mod signals;
 pub mod style;
 pub mod suggest;
