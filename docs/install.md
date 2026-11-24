@@ -10,7 +10,8 @@ Builds `caret.app` and copies it to `~/Applications`, then tells
 Spotlight about it so it is findable straight away. Type `caret`.
 
 Add `--dmg` for a disk image in `target/macos/`, with a shortcut to
-`/Applications` to drag onto. `--install` and `--dmg` can be used together or
+`/Applications` to drag onto, and `--universal` to build for both Apple
+silicon and Intel in one bundle, which is what a release ships. `--install` and `--dmg` can be used together or
 on their own; neither is required to build the bundle.
 
 The app is signed ad-hoc, which is enough for it to open on the machine that

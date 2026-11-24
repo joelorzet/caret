@@ -77,3 +77,42 @@ fn a_checksum_is_found_by_the_name_beside_it() {
     assert!(hash_of(LISTING, "caret-9.9.9-macos-arm64.dmg").is_none());
     assert!(hash_of("", "anything").is_none());
 }
+
+/// One macOS runner builds both architectures into one binary, so a
+/// release may name a file for the platform and say nothing about the
+/// architecture at all.
+const UNIVERSAL: &str = "\
+3cb2f7  caret-0.2.0-linux-x86_64.tar.gz
+9ac41e  caret-0.2.0-macos.app.zip
+71d0b8  caret-0.2.0-macos.dmg
+";
+
+#[test]
+fn a_build_that_names_no_architecture_is_for_every_architecture() {
+    for arch in ["aarch64", "x86_64"] {
+        assert_eq!(
+            pick_asset(UNIVERSAL, "macos", arch).as_deref(),
+            Some("caret-0.2.0-macos.dmg"),
+            "{arch}"
+        );
+    }
+}
+
+// A release that publishes both kinds hands over the one built for this
+// machine, not the one that merely fits it.
+#[test]
+fn a_named_architecture_is_preferred_over_a_universal_build() {
+    let both = "\
+111  caret-0.2.0-macos.dmg
+222  caret-0.2.0-macos-arm64.dmg
+";
+    assert_eq!(
+        pick_asset(both, "macos", "aarch64").as_deref(),
+        Some("caret-0.2.0-macos-arm64.dmg")
+    );
+    assert_eq!(
+        pick_asset(both, "macos", "x86_64").as_deref(),
+        Some("caret-0.2.0-macos.dmg"),
+        "and falls back when its own is not there"
+    );
+}
