@@ -18,6 +18,17 @@ markers needed to do it properly are already tracked (`RowMeta::WRAPPED`), so
 this is unfinished rather than impossible.
 *`caret-core/src/impls/screen/resize.rs`*
 
+## Panes
+
+**Linux drops what a program wrote as it exited.** A pty is drained before
+it is closed, so output a program wrote just before finishing is handed
+over rather than thrown away with the pane. On Linux the kernel discards
+whatever is still buffered the moment the last slave closes, so a command
+that writes and exits between two wake-ups can lose its last words there,
+where macOS keeps them. Holding a slave descriptor open in the parent
+would fix it and is the obvious next step.
+*`caret-pty/src/impls/pty_pool.rs`*
+
 ## Search
 
 **A match cannot span a wrapped line.** Search works on logical rows, and a
