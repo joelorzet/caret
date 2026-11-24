@@ -156,6 +156,15 @@ the same check you can run by hand.
   the unreleased heading.
 - New behaviour that a user can see belongs in the README too.
 
+## When CI fails without running
+
+GitHub hands out macOS runners unevenly, and a job it never places is
+cancelled with no runner attached and the message *"the job was not
+acquired by Runner of type hosted"*. The `retry` workflow notices exactly
+that shape, a cancelled job with no runner and no job that actually ran and
+failed, and re-runs the run once. A test that ran and failed is never
+retried.
+
 ## Reporting a bug
 
 Most useful, in this order: what you expected and what happened, the output of
