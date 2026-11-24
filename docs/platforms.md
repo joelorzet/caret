@@ -10,10 +10,11 @@
 | `caret-render` | yes | yes | yes, no platform code |
 | `caret-features` | yes | yes | yes, no platform code |
 | `caret-ui` | yes | yes | yes, no platform code |
+| `caret-update` | yes | yes | yes, curl and the shell tools |
 | `caret-pty` | yes | yes | **no**: needs ConPTY |
 | `caret-app` host mode | yes | yes | **no**: needs ConPTY and a console backend |
 
-Eight of the ten crates have no platform-specific code at all. That is a
+Nine of the eleven crates have no platform-specific code at all. That is a
 consequence of the layering rather than an accident: everything that touches
 the operating system is in `caret-pty` and the host loop.
 

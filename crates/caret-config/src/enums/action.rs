@@ -65,5 +65,7 @@ pub enum Action {
     /// Open the config file itself, which is where a change is made.
     EditConfig,
     ReloadConfig,
+    /// Ask whether a newer release has been published.
+    CheckUpdates,
     Quit,
 }

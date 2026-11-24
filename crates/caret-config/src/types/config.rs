@@ -8,6 +8,7 @@ pub struct Config {
     pub window: WindowConfig,
     pub terminal: TerminalConfig,
     pub chrome: ChromeConfig,
+    pub update: UpdateConfig,
     pub sidebars: SidebarsConfig,
     pub keymap: Keymap,
     /// Presets first, then anything defined in the config file.

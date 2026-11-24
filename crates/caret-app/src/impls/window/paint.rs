@@ -242,7 +242,7 @@ fn draw_box(
 ///
 /// The ellipse is centred on the cell corner opposite the bulge with semi-axes
 /// of half the cell, so it passes exactly through the midpoints of the two
-/// edges the straight arms arrive at — the join is seamless whatever the cell
+/// edges the straight arms arrive at, so the join is seamless whatever the cell
 /// proportions. The curve is antialiased, which is the whole point: stepping
 /// it would look worse than the right angle it replaces.
 fn draw_arc(
@@ -436,7 +436,7 @@ fn draw_glyph(
 /// Fills a cell's background with one or more corners rounded.
 ///
 /// The radius is half the cell's height, which makes the end of a one-row run
-/// a semicircle — a pill rather than a bar with the corners filed off. A cell
+/// a semicircle: a pill rather than a bar with the corners filed off. A cell
 /// is narrower than that radius, so the left and right quadrants overlap and
 /// each rounded corner has to be tested in turn; deciding which quadrant a
 /// pixel is in first would put every pixel on the left.

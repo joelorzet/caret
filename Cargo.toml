@@ -3,10 +3,11 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.87"   # fontdue uses integer_sign_cast, stable there
 license = "MIT"
+repository = "https://github.com/joelorzet/caret"
 
 [workspace.dependencies]
 caret-core     = { path = "crates/caret-core" }
@@ -18,6 +19,7 @@ caret-config   = { path = "crates/caret-config" }
 caret-features = { path = "crates/caret-features" }
 caret-render   = { path = "crates/caret-render" }
 caret-ui       = { path = "crates/caret-ui" }
+caret-update   = { path = "crates/caret-update" }
 caret-app      = { path = "crates/caret-app" }
 
 vte        = { version = "0.15", default-features = false, features = ["std"] }
@@ -36,6 +38,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [[bin]]
 name = "caret"

@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 /// Which clipboard that is depends on who owns the screen. Inside another
 /// terminal, OSC 52 asks it to set its own, which also works over SSH. In a
 /// window of our own there is nobody to ask, so the platform's clipboard is
-/// written directly — without it, copying here could not be pasted anywhere
+/// written directly. Without it, copying here could not be pasted anywhere
 /// else.
 pub fn copy(text: &str, owns_window: bool) -> std::io::Result<()> {
     if owns_window {

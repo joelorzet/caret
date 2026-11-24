@@ -5,7 +5,17 @@ use crate::prelude::*;
 const MIN_COLS: u16 = 20;
 const MIN_ROWS: u16 = 5;
 
+/// Asking more than once an hour is pestering; a month apart is as good as
+/// never, and anything further out may as well be off.
+const MIN_CHECK_HOURS: u32 = 1;
+const MAX_CHECK_HOURS: u32 = 720;
+
 impl Config {
+    /// Whether this configuration wants caret to look for a newer release.
+    pub fn check_updates(&self) -> bool {
+        self.update.check
+    }
+
     pub(crate) fn apply(&mut self, raw: RawConfig, warn: &mut Vec<String>) {
         if let Some(theme) = raw.theme {
             self.theme = theme;
@@ -112,6 +122,13 @@ impl Config {
             set(&mut self.chrome.show_memory, c.show_memory);
             if let Some(padding) = c.padding {
                 self.chrome.padding = padding.min(8);
+            }
+        }
+
+        if let Some(u) = raw.update {
+            set(&mut self.update.check, u.check);
+            if let Some(hours) = u.interval_hours {
+                self.update.interval_hours = hours.clamp(MIN_CHECK_HOURS, MAX_CHECK_HOURS);
             }
         }
 

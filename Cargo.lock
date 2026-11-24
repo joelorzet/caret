@@ -167,14 +167,14 @@ dependencies = [
 
 [[package]]
 name = "caret"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-app",
 ]
 
 [[package]]
 name = "caret-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-config",
  "caret-core",
@@ -184,6 +184,7 @@ dependencies = [
  "caret-render",
  "caret-theme",
  "caret-ui",
+ "caret-update",
  "caret-vt",
  "libc",
  "softbuffer",
@@ -192,7 +193,7 @@ dependencies = [
 
 [[package]]
 name = "caret-config"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-core",
  "caret-layout",
@@ -203,26 +204,26 @@ dependencies = [
 
 [[package]]
 name = "caret-core"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "caret-features"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "caret-layout"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "caret-pty"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "caret-render"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-core",
  "caret-theme",
@@ -233,18 +234,22 @@ dependencies = [
 
 [[package]]
 name = "caret-theme"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-core",
 ]
 
 [[package]]
 name = "caret-ui"
-version = "0.1.0"
+version = "0.1.1"
+
+[[package]]
+name = "caret-update"
+version = "0.1.1"
 
 [[package]]
 name = "caret-vt"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "caret-core",
  "unicode-width",

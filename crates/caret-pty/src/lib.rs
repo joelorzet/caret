@@ -12,8 +12,8 @@
 //!
 //! Windows has no pty; it has ConPTY, which is a different API shape
 //! (`CreatePseudoConsole` plus overlapped pipe handles rather than a master
-//! fd). The public surface of this crate — [`PtyPool`], [`PtySpec`],
-//! [`PtyEvent`] — is deliberately free of fd-shaped types in its signatures so
+//! fd). The public surface of this crate, [`PtyPool`], [`PtySpec`] and
+//! [`PtyEvent`], is deliberately free of fd-shaped types in its signatures so
 //! a ConPTY backend can sit behind it. See `docs/platforms.md`.
 //!
 //! `types/` and `enums/` hold declarations, `impls/` holds the code.

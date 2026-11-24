@@ -27,6 +27,7 @@ impl Config {
         let f = &self.font;
         let w = &self.window;
         let c = &self.chrome;
+        let u = &self.update;
         let explorer = &self.sidebars.explorer;
         let agent = &self.sidebars.agent;
 
@@ -193,6 +194,18 @@ impl Config {
                 "padding",
                 c.padding.to_string(),
                 "cells between the panes and the window",
+            ),
+            row(
+                "update",
+                "check",
+                u.check.to_string(),
+                "look for a newer release",
+            ),
+            row(
+                "update",
+                "interval_hours",
+                u.interval_hours.to_string(),
+                "hours between checks, 1 to 720",
             ),
             row(
                 "explorer",

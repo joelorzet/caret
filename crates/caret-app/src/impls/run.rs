@@ -14,6 +14,7 @@ usage: caret [command]
   fonts [query]          list installed fonts, monospaced first
   config [show|example|init]
                          show settings, print a starter config, or write one
+  update [--install]     see whether a newer release is out, and install it
   layout                 print the pane-tree geometry
 ";
 
@@ -39,6 +40,10 @@ pub fn run() {
         Some("window") => window(),
         Some("inline") => inline(),
         Some("config") => config_cmd::run(std::env::args().nth(2).as_deref()),
+        Some("update") => {
+            let install = std::env::args().nth(2).as_deref() == Some("--install");
+            crate::impls::host::updates::command(install)
+        }
         Some("fonts") => {
             print!("{}", fonts::render(std::env::args().nth(2).as_deref()));
             0

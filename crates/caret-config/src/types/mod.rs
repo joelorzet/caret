@@ -13,4 +13,5 @@ pub mod shortcut;
 pub mod sidebars_config;
 pub mod terminal_config;
 pub mod theme_registry;
+pub mod update_config;
 pub mod window_config;

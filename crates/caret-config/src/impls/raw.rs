@@ -17,6 +17,7 @@ pub(crate) struct RawConfig {
     pub window: Option<RawWindow>,
     pub terminal: Option<RawTerminal>,
     pub chrome: Option<RawChrome>,
+    pub update: Option<RawUpdate>,
     pub sidebar: Option<RawSidebars>,
     pub keys: Option<RawKeys>,
     pub layouts: Option<BTreeMap<String, RawLayout>>,
@@ -69,6 +70,12 @@ pub(crate) struct RawTerminal {
     pub confirm_close: Option<bool>,
     pub highlight_input: Option<bool>,
     pub mouse: Option<bool>,
+}
+
+#[derive(Deserialize, Default)]
+pub(crate) struct RawUpdate {
+    pub check: Option<bool>,
+    pub interval_hours: Option<u32>,
 }
 
 #[derive(Deserialize, Default)]

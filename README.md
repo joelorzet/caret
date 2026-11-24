@@ -255,7 +255,8 @@ Everything lives in `~/.config/caret/`:
 ~/.config/caret/
 ├── config.toml     settings, keybindings and saved layouts
 ├── themes/         your own themes, one .toml each
-└── history         what the suggestions are drawn from
+├── history         what the suggestions are drawn from
+└── update-check    when the last update check ran, and what it found
 ```
 
 `caret config init` writes a starter file with every setting at its default and
@@ -296,6 +297,32 @@ split = "h(60:*, 40:v(*, *, *))"
 Saved layouts are either a preset with a pane count or an explicit shape in the
 spec language, where `*` is a pane and a split is `h(..)` or `v(..)`. Recall one
 with `apply_layout:<name>` bound to a key.
+
+## Keeping it up to date
+
+caret asks once a day whether a newer release has been published, and says so
+in the status line when there is one. On demand:
+
+```sh
+caret update             # is there a newer release?
+caret update --install   # fetch it, check it, put it in place
+```
+
+`--install` downloads the build for this machine, checks it against the
+published `SHA256SUMS` and refuses to install anything that does not match.
+On macOS it replaces the app bundle it is running from, on Linux the binary,
+and it says what to do next. The command palette has **Look for a newer
+release** for asking without leaving the terminal.
+
+The check sends caret's name and version and nothing else: no identifiers,
+nothing about the machine or the person at it, no token and no cookies. It
+asks where `releases/latest` redirects to and compares the tag with this
+build. Turn it off and caret never touches the network:
+
+```toml
+[update]
+check = false
+```
 
 ## Keybindings
 
@@ -344,6 +371,7 @@ caret themes               preview the built-in themes in colour
 caret fonts [query]        list installed fonts, monospaced first
 caret config [show|example|init]
                            show settings, print a starter config, or write one
+caret update [--install]   see whether a newer release is out, and install it
 caret layout               print the pane-tree geometry
 ```
 
@@ -359,6 +387,7 @@ caret-config    actions, keymap, config file, theme registry
 caret-render    font discovery, metrics, glyph raster, box drawing
 caret-features  the file explorer and the file preview
 caret-ui        the tab strip: layout and hit testing
+caret-update    whether a newer release has been published
 caret-app       the window, the event loop, input, both renderers
 ```
 
@@ -373,6 +402,7 @@ caret-app       the window, the event loop, input, both renderers
 | `caret-render` | core, theme, fontdb, fontdue | 34 |
 | `caret-features` | none | 109 |
 | `caret-ui` | none | 20 |
+| `caret-update` | none | 19 |
 | `caret-app` | all of the above, winit, softbuffer | 63 |
 
 The house rules are written down in [CONVENTIONS.md](docs/CONVENTIONS.md) and worth

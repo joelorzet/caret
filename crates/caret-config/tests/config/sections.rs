@@ -63,3 +63,22 @@ highlight_input = false
     assert!(problems.is_empty(), "{problems:?}");
     assert!(!config.terminal.highlight_input);
 }
+
+// A terminal that reaches the network has to say so and has to be easy to
+// stop. The default is on, and one line turns it off for good.
+#[test]
+fn looking_for_updates_is_on_by_default_and_the_interval_is_held_in_range() {
+    let (config, problems) = parse("");
+    assert!(config.update.check);
+    assert_eq!(config.update.interval_hours, 24);
+    assert!(problems.is_empty());
+
+    let (off, _) = parse("[update]\ncheck = false\n");
+    assert!(!off.check_updates());
+
+    let (eager, _) = parse("[update]\ninterval_hours = 0\n");
+    assert_eq!(eager.update.interval_hours, 1, "not on every start");
+
+    let (patient, _) = parse("[update]\ninterval_hours = 100000\n");
+    assert_eq!(patient.update.interval_hours, 720);
+}

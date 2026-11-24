@@ -170,6 +170,10 @@ impl Session {
             Action::ShowSettings => self.open_palette(PaletteMode::Settings),
             Action::EditConfig => self.edit_config()?,
             Action::ReloadConfig => self.reload_config(),
+            Action::CheckUpdates => {
+                self.message = " looking for a newer release...".into();
+                self.begin_update_check(true);
+            }
             Action::Quit => self.running = false,
         }
         Ok(())
