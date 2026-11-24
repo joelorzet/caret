@@ -5,6 +5,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
 caret-core.workspace = true
@@ -16,6 +17,7 @@ caret-pty.workspace = true
 caret-features.workspace = true
 caret-render.workspace = true
 caret-ui.workspace = true
+caret-update.workspace = true
 winit.workspace = true
 softbuffer.workspace = true
 

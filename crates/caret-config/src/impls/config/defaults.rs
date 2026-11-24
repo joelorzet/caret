@@ -52,6 +52,15 @@ impl Default for TerminalConfig {
     }
 }
 
+impl Default for UpdateConfig {
+    fn default() -> Self {
+        UpdateConfig {
+            check: true,
+            interval_hours: 24,
+        }
+    }
+}
+
 impl Default for ChromeConfig {
     fn default() -> Self {
         ChromeConfig {
@@ -94,6 +103,7 @@ impl Default for Config {
             window: WindowConfig::default(),
             terminal: TerminalConfig::default(),
             chrome: ChromeConfig::default(),
+            update: UpdateConfig::default(),
             sidebars: SidebarsConfig::default(),
             keymap: Keymap::default(),
             layouts: LayoutTemplate::presets(),

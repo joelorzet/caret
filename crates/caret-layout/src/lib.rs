@@ -1,5 +1,5 @@
 //! Pane layout: a tmux-shaped tree of splits, tabs, saved layout templates,
-//! and the window chrome around them. Pure geometry — no rendering, no
+//! and the window chrome around them. Pure geometry: no rendering, no
 //! processes, no dependencies.
 //!
 //! `types/` and `enums/` hold declarations, `impls/` holds the code.

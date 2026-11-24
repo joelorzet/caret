@@ -80,6 +80,9 @@ pub struct Session {
     pub(crate) palette: Option<Palette>,
     /// Set while the panes are being arranged by hand.
     pub(crate) rearrange: Option<Rearrange>,
+    /// An update check running in the background, and whether somebody
+    /// asked for it rather than it being the daily one.
+    pub(crate) update_check: Option<(std::sync::mpsc::Receiver<Outcome>, bool)>,
     pub(crate) message: String,
     /// The message as it was last seen, and when it stops being news.
     ///

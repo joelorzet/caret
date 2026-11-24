@@ -9,7 +9,7 @@ const SCHEMA: &[(&str, &[&str])] = &[
     (
         "",
         &[
-            "theme", "font", "window", "terminal", "chrome", "sidebar", "keys", "layouts",
+            "theme", "font", "window", "terminal", "chrome", "update", "sidebar", "keys", "layouts",
         ],
     ),
     (
@@ -57,6 +57,7 @@ const SCHEMA: &[(&str, &[&str])] = &[
             "padding",
         ],
     ),
+    ("update", &["check", "interval_hours"]),
     ("sidebar", &["explorer", "agent"]),
     (
         "sidebar.explorer",

@@ -18,6 +18,7 @@ pub(crate) use caret_layout::{
 };
 pub(crate) use caret_pty::{PtyEvent, PtyId, PtyPool, PtySpec};
 pub(crate) use caret_theme::{Appearance, ColorSlot, SyntaxPalette, Theme};
+pub(crate) use caret_update::Outcome;
 pub(crate) use caret_vt::Parser;
 
 pub(crate) use crate::enums::drag_target::*;

@@ -21,3 +21,4 @@ pub mod suggest;
 pub mod surface;
 pub mod tabs;
 pub mod trace;
+pub mod updates;

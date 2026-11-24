@@ -24,7 +24,7 @@ SSH or a nested session.
 
 ## Crates
 
-Ten crates, 659 tests, 0 clippy findings. `caret-core` and `caret-layout` have no
+Eleven crates, 683 tests, 0 clippy findings. `caret-core` and `caret-layout` have no
 dependencies at all, which is what makes them exhaustively testable.
 
 | Crate | Dependencies | Tests | What it is |
@@ -38,6 +38,7 @@ dependencies at all, which is what makes them exhaustively testable.
 | `caret-render` | core, theme, fontdb, fontdue | 34 | font discovery, metrics, glyph raster |
 | `caret-features` | none | 109 | the file explorer and the file preview |
 | `caret-ui` | none | 20 | the tab strip: layout and hit testing |
+| `caret-update` | none | 17 | whether a newer release has been published |
 | `caret-app` | all, winit, softbuffer | 63 | window, event loop, input, both renderers |
 
 ## Running it
@@ -51,6 +52,7 @@ cargo build --release
 ./target/release/caret fonts [q]    # installed fonts, monospaced first
 ./target/release/caret config       # effective settings and any problems
 ./target/release/caret config init  # write a starter config
+./target/release/caret update       # is a newer release out? --install gets it
 ```
 
 `CARET_TRACE=/tmp/caret.log` logs actions and spawns; a terminal cannot log to its

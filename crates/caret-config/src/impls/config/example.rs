@@ -61,6 +61,15 @@ hide_tab_bar_when_single = false
 show_memory = false    # grid memory in the status line; diagnostics
 padding = 1            # columns either side of the pane area, 0 to 8
 
+# Looking for a newer release. The check asks GitHub where releases/latest
+# points and compares the tag with this build: it sends caret's name and
+# version and nothing else, no identifiers and nothing about you or your
+# machine. With check = false caret never touches the network.
+# `caret update` asks on demand, and `caret update --install` installs.
+[update]
+check = true
+interval_hours = 24    # 1 to 720
+
 # The file explorer, on the left.
 [sidebar.explorer]
 visible = false

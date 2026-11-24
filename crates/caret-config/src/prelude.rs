@@ -30,4 +30,5 @@ pub(crate) use crate::types::shortcut::*;
 pub(crate) use crate::types::sidebars_config::*;
 pub(crate) use crate::types::terminal_config::*;
 pub(crate) use crate::types::theme_registry::*;
+pub(crate) use crate::types::update_config::*;
 pub(crate) use crate::types::window_config::*;

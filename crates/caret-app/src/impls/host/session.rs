@@ -73,6 +73,7 @@ impl Session {
             prefix_pending: false,
             palette: None,
             rearrange: None,
+            update_check: None,
             message: String::new(),
             message_shown: String::new(),
             message_until: None,
@@ -83,8 +84,10 @@ impl Session {
 
         let warnings = loaded.warnings.len() + theme_warnings.len();
         if warnings > 0 {
-            session.message = format!(" {warnings} config problem(s) — run `caret config`");
+            session.message = format!(" {warnings} config problem(s): run `caret config`");
         }
+
+        session.begin_update_check(false);
 
         let first = session.workspace.active_pane();
         let area = session.center_rect();
@@ -653,6 +656,7 @@ impl Session {
 
     pub fn pump(&mut self, timeout_ms: i32) -> std::io::Result<bool> {
         self.age_message();
+        self.settle_update_check();
         self.settle_pty_sizes();
         let mut events = Vec::new();
         let mut ready = Vec::new();

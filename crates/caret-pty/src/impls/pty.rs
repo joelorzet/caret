@@ -139,7 +139,7 @@ impl Drop for Pty {
     /// Closing a pane must not be able to wedge the window, so this escalates
     /// on a timer and then gives up: SIGHUP (which a shell is entitled to
     /// trap), then SIGKILL, then abandon it. An abandoned child is already
-    /// dead or unkillable, and either way the OS reparents it on exit — far
+    /// dead or unkillable, and either way the OS reparents it on exit, which is far
     /// better than an unbounded `wait` in a destructor.
     fn drop(&mut self) {
         if self.exited.is_some() {

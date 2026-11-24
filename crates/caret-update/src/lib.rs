@@ -11,8 +11,9 @@ mod prelude;
 mod types;
 
 pub use enums::outcome::Outcome;
-pub use impls::check::{check, fetch_latest, RELEASES};
-pub use impls::state::state_path;
+pub use impls::check::{check, download, fetch_latest, RELEASES};
+pub use impls::install::{asset_for, hash_of, install};
+pub use impls::state::{now, state_path};
 pub use types::check_state::CheckState;
 pub use types::release::Release;
 pub use types::version::Version;

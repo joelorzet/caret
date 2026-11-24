@@ -4,6 +4,27 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## 0.1.1
+
+### Added
+
+- **Update checking.** caret asks once a day whether a newer release has been
+  published, and says so in the status line when there is one. The check
+  sends caret's name and version and nothing else: no identifiers, nothing
+  about the machine or the person at it. `check = false` under `[update]`
+  turns it off and caret never touches the network.
+- **`caret update`** says whether a newer release is out, and
+  **`caret update --install`** fetches it, checks it against the published
+  `SHA256SUMS` and puts it in place. Nothing is installed that does not match
+  its checksum.
+- **Look for a newer release** in the command palette, for asking on demand.
+
+### Fixed
+
+- A pane no longer loses what it printed. A short command that wrote and
+  exited between two wake-ups was noticed as dead and closed with its output
+  still in the buffer.
+
 ## 0.1.0
 
 The first release.

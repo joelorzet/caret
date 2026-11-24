@@ -11,7 +11,7 @@ impl Resolved {
     /// The border under a cell, with the pane whose edge it is.
     ///
     /// Resizing moves the focused pane's border, so the caller needs to know
-    /// which pane to focus: the one on the near side — left of a vertical
+    /// which pane to focus: the one on the near side, left of a vertical
     /// border, above a horizontal one.
     pub fn divider_at(&self, col: u16, row: u16) -> Option<(Divider, PaneId)> {
         let divider = *self.dividers.iter().find(|divider| match divider.axis {
