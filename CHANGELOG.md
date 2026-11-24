@@ -4,6 +4,19 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## Unreleased
+
+### Fixed
+
+- **A window that changes width lays its lines out again** instead of
+  cutting them. Narrowing truncated every line that no longer fit and
+  widening left wrapped lines in pieces, so going full screen rearranged
+  your scrollback into nonsense. Lines are taken back apart and re-broken
+  at the new width, scrollback included, with the cursor staying on the
+  character it was on rather than the row. A wide character is never split
+  down the middle, and the alternate screen is left alone, since the
+  program drawing it redraws anyway.
+
 ## 0.1.3
 
 ### Added

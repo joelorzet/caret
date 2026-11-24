@@ -36,8 +36,18 @@ impl Screen {
                 top: 0,
                 bottom: rows - 1,
             },
+            reflow: true,
             all_dirty: true,
             scratch: Vec::new(),
+        }
+    }
+
+    /// The alternate screen: no scrollback, and no rewrapping, because the
+    /// program drawing it redraws on every resize.
+    pub fn alternate(cols: u16, rows: u16) -> Screen {
+        Screen {
+            reflow: false,
+            ..Screen::new(cols, rows, 0)
         }
     }
 

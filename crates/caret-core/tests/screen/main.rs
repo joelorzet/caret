@@ -6,5 +6,6 @@ mod editing;
 mod history;
 mod memory;
 mod printing;
+mod reflow;
 mod resizing;
 mod scrolling;

@@ -461,8 +461,6 @@ dependencies in `caret-core` or `caret-layout`.
 
 - **Ligature shaping.** `font.ligatures` is accepted but the window draws one
   glyph per cell, so `!=` stays two glyphs.
-- **Reflow on resize.** Narrowing truncates rows rather than rewrapping them.
-  The wrap markers needed to do it properly are already tracked.
 - **GPU rendering.** Everything is rasterised and blended on the CPU.
 - **Combining characters, DCS sequences, character sets.** See
   [docs/limitations.md](docs/limitations.md).

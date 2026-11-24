@@ -19,11 +19,17 @@ fn growing_the_viewport_reveals_history_and_the_cursor_follows() {
 }
 
 #[test]
-fn shrinking_columns_truncates_each_row() {
+fn shrinking_columns_rewraps_rather_than_truncating() {
     let mut s = Screen::new(8, 2, 10);
     write(&mut s, "abcdef\r\nghijkl");
+
     s.resize(3, 2);
-    assert_eq!(viewport(&s), vec!["abc", "ghi"]);
+    // Each line is two rows of three now, so four in all: the first two
+    // went into history and the last two are on screen.
+    assert_eq!(viewport(&s), vec!["ghi", "jkl"]);
+    assert_eq!(s.history_len(), 2);
+    assert_eq!(s.row_text(0), "abc");
+    assert_eq!(s.row_text(1), "def");
     assert_eq!(s.cols(), 3);
 }
 
