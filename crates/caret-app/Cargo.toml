@@ -3,6 +3,7 @@ name = "caret-app"
 description = "Window shell: event loop, input routing and session wiring"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]

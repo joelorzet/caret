@@ -50,10 +50,7 @@ impl Performer<'_> {
 
 fn path_from_url(url: &str) -> Option<String> {
     let rest = url.strip_prefix("file://")?;
-    let path = match rest.find('/') {
-        Some(i) => &rest[i..],
-        None => return None,
-    };
+    let path = &rest[rest.find('/')?..];
     Some(percent_decode(path))
 }
 

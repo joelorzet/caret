@@ -3,6 +3,7 @@ name = "caret-render"
 description = "Font discovery and the rendering interface"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]

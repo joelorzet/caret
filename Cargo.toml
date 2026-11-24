@@ -21,9 +21,7 @@ caret-ui       = { path = "crates/caret-ui" }
 caret-app      = { path = "crates/caret-app" }
 
 vte        = { version = "0.15", default-features = false, features = ["std"] }
-rustix     = { version = "1.1", features = ["std", "process", "pty", "termios", "stdio", "fs", "event"] }
 libc       = "0.2"
-polling    = "3.11"
 winit      = "0.30"
 softbuffer = "0.4"
 fontdue    = "0.9"
@@ -36,6 +34,7 @@ name = "caret"
 description = "A fast, memory-lean terminal emulator with native tmux-style splits"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [[bin]]

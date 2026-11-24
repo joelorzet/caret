@@ -3,6 +3,7 @@ name = "caret-vt"
 description = "Escape sequence parser driving the terminal state"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
