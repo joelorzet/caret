@@ -1,0 +1,9 @@
+[package]
+name = "caret-update"
+description = "Asks GitHub whether a newer caret has been released"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
