@@ -43,12 +43,20 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
   test:
-    name: build and test (${{ matrix.os }})
+    # Named for the platform rather than the image, so changing which image
+    # builds it does not rename a required check and quietly block merging.
+    name: build and test (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          # macos-latest is the newest image and the least likely to be
+          # handed out; see the note in release.yml.
+          - os: macos-15
+            platform: macos
     steps:
       - uses: actions/checkout@v5
 
