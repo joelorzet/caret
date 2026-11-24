@@ -161,6 +161,12 @@ impl Config {
             ),
             row(
                 "terminal",
+                "clipboard_write",
+                t.clipboard_write.to_string(),
+                "let programs in a pane set the clipboard",
+            ),
+            row(
+                "terminal",
                 "mouse",
                 t.mouse.to_string(),
                 "report mouse events to programs",

@@ -14,5 +14,6 @@ pub mod types;
 mod prelude;
 
 pub use crate::enums::dec_mode::{AnsiMode, DecMode};
+pub use crate::impls::base64::{base64, unbase64};
 pub use crate::types::parser::Parser;
 pub use crate::types::performer::Performer;

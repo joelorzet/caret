@@ -8,6 +8,11 @@ and a patch never does.
 
 ### Added
 
+- **A copy made inside a pane reaches the system clipboard.** Yanking in an
+  editor, or copying in a multiplexer, went nowhere: the program asked and
+  the terminal ignored it. The request is honoured now, with a size limit
+  and a `clipboard_write` setting to refuse it. A program asking to *read*
+  the clipboard is still never answered.
 - **Search finds a phrase that wraps.** A line that filled the width is
   stored as several rows, and a match straddling the break was missed even
   though it was on the screen. Search reads the logical line now.

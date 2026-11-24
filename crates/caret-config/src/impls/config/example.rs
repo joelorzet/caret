@@ -52,6 +52,9 @@ bell = "visual"        # none | visual | audible
 word_separators = " \t\n\"'`()[]{}<>|;:,"
 confirm_close = true   # ask before closing a pane that still has a job running
 highlight_input = true # colour the command line as you type it
+# Let a program running in a pane put text on the clipboard, which is how
+# an editor's yank reaches it. Reading the clipboard is never allowed.
+clipboard_write = true
 mouse = true           # click to focus, wheel to scroll, and report to apps
 
 [chrome]

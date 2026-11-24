@@ -18,6 +18,9 @@ pub struct TerminalConfig {
     /// Colour the command line as it is typed: the program, its flags, its
     /// variables and its strings. Off leaves the shell's own colours alone.
     pub highlight_input: bool,
+    /// Whether a program running in a pane may put text on the clipboard.
+    /// Reading it is never allowed, with or without this.
+    pub clipboard_write: bool,
     /// Report mouse events. Turning this off gives the surrounding terminal
     /// its own selection back when running in host mode.
     pub mouse: bool,

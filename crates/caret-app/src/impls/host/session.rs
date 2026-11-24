@@ -871,6 +871,22 @@ impl Session {
         }
     }
 
+    /// A program in a pane asked for text to go on the clipboard.
+    ///
+    /// Worth saying out loud: a copy nobody can see happening is a copy
+    /// nobody knows to distrust.
+    fn clipboard_from_pane(&mut self, text: String) {
+        if !self.config.terminal.clipboard_write {
+            return;
+        }
+        let count = text.chars().count();
+        match clipboard::copy(&text, self.native_window) {
+            Ok(()) => self.message = format!(" copied {count} characters from the pane"),
+            Err(e) => self.message = format!(" could not copy from the pane: {e}"),
+        }
+        self.needs_draw = true;
+    }
+
     fn drain_terminal_events(&mut self, id: PaneId) {
         let Some(pane) = self.pane_mut(id) else {
             return;
@@ -900,6 +916,7 @@ impl Session {
                         }
                     }
                 }
+                TerminalEvent::ClipboardWrite(text) => self.clipboard_from_pane(text),
                 TerminalEvent::TitleChanged => {}
                 TerminalEvent::PromptMarked => {}
             }

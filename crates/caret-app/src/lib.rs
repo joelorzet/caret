@@ -13,7 +13,6 @@ pub mod types;
 
 mod prelude;
 
-pub use crate::impls::host::clipboard::base64;
 pub use crate::impls::host::draw::{
     agent_rect, arrange_canvas, arrange_rect, dock_body, join_dividers,
 };

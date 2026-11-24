@@ -109,6 +109,7 @@ impl Config {
             set(&mut self.terminal.word_separators, t.word_separators);
             set(&mut self.terminal.confirm_close, t.confirm_close);
             set(&mut self.terminal.highlight_input, t.highlight_input);
+            set(&mut self.terminal.clipboard_write, t.clipboard_write);
             set(&mut self.terminal.mouse, t.mouse);
         }
 

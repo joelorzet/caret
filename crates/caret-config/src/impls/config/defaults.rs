@@ -47,6 +47,7 @@ impl Default for TerminalConfig {
             word_separators: " \t\n\"'`()[]{}<>|;:,".into(),
             confirm_close: true,
             highlight_input: true,
+            clipboard_write: true,
             mouse: true,
         }
     }
