@@ -35,50 +35,34 @@ const IDLE: Duration = Duration::from_millis(60);
 /// How long after the last sign of life the window keeps to `FRAME`.
 const BUSY: Duration = Duration::from_millis(500);
 
-/// How long the cursor goes on blinking after the last key or click.
-///
-/// Flashing the cursor means handing the compositor an entire new frame, so
-/// one cell of animation costs a full-screen redraw twice a second for as
-/// long as the window is open. The blink is there to help you find the
-/// cursor while you are working, so it runs while you are and settles into a
-/// steady cursor when you stop.
-const BLINK_REST: Duration = Duration::from_secs(10);
-
 /// How long a snapshot waits after typing before it captures.
 const SETTLE: Duration = Duration::from_millis(700);
 
-/// A terminal in a window of its own.
+/// Every window the program has open, and what they share.
+///
+/// The event loop and the rasterised glyphs belong here rather than to a
+/// window: a second window on the same display draws with the same glyphs,
+/// and rasterising them again would cost a megabyte to say the same thing
+/// twice. A window that moves to a display of another scale gets a painter
+/// of its own, because the glyphs genuinely differ there.
 pub struct WindowApp {
-    session: Session,
-    painter: Option<Painter>,
-    window: Option<Arc<Window>>,
-    context: Option<softbuffer::Context<Arc<Window>>>,
-    surface: Option<softbuffer::Surface<Arc<Window>, Arc<Window>>>,
-    modifiers: ModifiersState,
-    pointer: (u16, u16),
-    /// Where the pointer is in pixels, for the chrome, which is not on the
-    /// cell grid.
-    pointer_px: (f64, f64),
-    hover: StripHit,
-    /// The shape the pointer is currently wearing.
-    shape: CursorIcon,
-    strip: StripLayout,
-    scale: f32,
-    blink: Blink,
-    /// Whether the window has the keyboard. An unfocused window has no
-    /// business blinking a cursor at a nobody, and blinking is the one thing
-    /// that makes an idle terminal redraw.
-    focused: bool,
-    /// When the window last had output, a key or a click.
-    active_at: Instant,
-    /// When somebody last typed or clicked, which is what the cursor blinks
-    /// for.
-    typed_at: Instant,
+    windows: Vec<WindowState>,
+    /// Painters by the scale they rasterised for, in hundredths.
+    painters: Vec<(u32, Painter)>,
+    /// The session built before the loop started, waiting for a window to
+    /// put it in. A failure to start one is worth an exit code, which is
+    /// why it is not left until the loop is running.
+    pending: Option<Session>,
     snapshot: Option<Snapshot>,
-    /// When the snapshot is due; `None` until the window is up.
+    /// When the snapshot is due; `None` until the first window is up.
     snapshot_at: Option<std::time::Instant>,
     exiting: bool,
-    title: String,
+}
+
+/// A scale as a key: floating point does not compare, and a hundredth of a
+/// scale factor is finer than any display reports.
+fn scale_key(scale: f32) -> u32 {
+    (scale * 100.0).round() as u32
 }
 
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -88,49 +72,39 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     event_loop.set_control_flow(ControlFlow::Wait);
 
     let mut app = WindowApp {
-        session,
-        painter: None,
-        window: None,
-        context: None,
-        surface: None,
-        modifiers: ModifiersState::empty(),
-        pointer: (0, 0),
-        pointer_px: (0.0, 0.0),
-        hover: StripHit::Background,
-        shape: CursorIcon::Default,
-        strip: StripLayout::default(),
-        scale: 1.0,
-        blink: Blink::new(),
-        focused: true,
-        active_at: Instant::now(),
-        typed_at: Instant::now(),
+        windows: Vec::new(),
+        painters: Vec::new(),
+        pending: Some(session),
         snapshot: Snapshot::from_env(),
         snapshot_at: None,
         exiting: false,
-        title: String::new(),
     };
     event_loop.run_app(&mut app)?;
     Ok(())
 }
 
 impl WindowApp {
-    /// Whether the cursor should be blinking at this moment.
-    ///
-    /// Three things have to hold: the configuration and the program in the
-    /// pane both want it, the window has the keyboard, and somebody has used
-    /// it recently. A window nobody is working in holds a steady cursor and
-    /// draws nothing at all.
-    fn blinking(&self) -> bool {
-        self.focused && self.typed_at.elapsed() < BLINK_REST && self.session.cursor_blinks()
+    fn at(&self, id: WindowId) -> Option<usize> {
+        self.windows.iter().position(|w| w.window.id() == id)
     }
 
-    /// A painter with the glyphs rasterised for `scale`.
+    /// The painter for a scale, rasterising the glyphs the first time that
+    /// scale is asked for.
     ///
     /// Device pixels, not logical ones: a cache built for one display and
     /// used on another gives text at the wrong size, because the font was
     /// measured against a scale the window no longer has.
-    fn painter_at(&self, scale: f32) -> Result<Painter, String> {
-        let font = self.session.font_config().clone();
+    fn painter_for(
+        &mut self,
+        scale: f32,
+        font: &caret_config::FontConfig,
+        padding: u16,
+    ) -> Result<usize, String> {
+        let key = scale_key(scale);
+        if let Some(at) = self.painters.iter().position(|(k, _)| *k == key) {
+            return Ok(at);
+        }
+
         let library = FontLibrary::load();
         let cache = GlyphCache::new(
             &library,
@@ -147,18 +121,16 @@ impl WindowApp {
             )
         })?;
 
-        let padding = (self.session.window_config().padding as f32 * scale) as usize;
+        let padding = (padding as f32 * scale) as usize;
         let mut painter = Painter::new(cache, padding, font.builtin_box_drawing);
         painter.ligatures = font.ligatures;
         painter.chrome = painter.strip_height();
-        Ok(painter)
+        self.painters.push((key, painter));
+        Ok(self.painters.len() - 1)
     }
 
-    /// Builds the window and the glyph cache.
-    ///
-    /// The cache is created at the display's scale, so text is rasterised at
-    /// device resolution rather than scaled up and blurred.
-    fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
+    /// Opens a window for `session`.
+    fn open(&mut self, event_loop: &ActiveEventLoop, mut session: Session) -> Result<(), String> {
         let attributes = chrome_attributes(Window::default_attributes().with_title("caret"));
         let window = Arc::new(
             event_loop
@@ -167,71 +139,107 @@ impl WindowApp {
         );
 
         let scale = window.scale_factor() as f32;
-        let painter = self.painter_at(scale)?;
-        self.scale = scale;
-        self.session.take_over_tab_bar();
+        let font = session.font_config().clone();
+        let padding = session.window_config().padding;
+        let at = self.painter_for(scale, &font, padding)?;
+        session.take_over_tab_bar();
 
-        let window_config = self.session.window_config();
-        let (width, height) = painter.window_size(window_config.cols, window_config.rows);
+        let window_config = session.window_config();
+        let (width, height) = self.painters[at]
+            .1
+            .window_size(window_config.cols, window_config.rows);
         let _ = window.request_inner_size(PhysicalSize::new(width, height));
 
         let context = softbuffer::Context::new(window.clone()).map_err(|e| e.to_string())?;
         let surface =
             softbuffer::Surface::new(&context, window.clone()).map_err(|e| e.to_string())?;
 
-        if let Some(snapshot) = &self.snapshot {
-            self.snapshot_at = Some(std::time::Instant::now() + snapshot.after);
-            for binding in snapshot.keys.clone() {
-                let _ = self.session.handle_key(KeyPress {
-                    binding,
-                    bytes: Vec::new(),
-                });
+        // A snapshot is a development capture of the first window, and the
+        // keys it asks for are typed into that one.
+        if self.windows.is_empty() {
+            if let Some(snapshot) = &self.snapshot {
+                self.snapshot_at = Some(std::time::Instant::now() + snapshot.after);
+                for binding in snapshot.keys.clone() {
+                    let _ = session.handle_key(KeyPress {
+                        binding,
+                        bytes: Vec::new(),
+                    });
+                }
             }
         }
 
-        self.session.set_native_window(true);
-        self.painter = Some(painter);
-        self.context = Some(context);
-        self.surface = Some(surface);
-        self.window = Some(window);
+        session.set_native_window(true);
+        self.windows.push(WindowState {
+            session,
+            window,
+            _context: context,
+            surface,
+            scale,
+            modifiers: ModifiersState::empty(),
+            pointer: (0, 0),
+            pointer_px: (0.0, 0.0),
+            hover: StripHit::Background,
+            shape: CursorIcon::Default,
+            strip: StripLayout::default(),
+            blink: Blink::new(),
+            focused: true,
+            active_at: Instant::now(),
+            typed_at: Instant::now(),
+            title: String::new(),
+        });
         Ok(())
     }
 
-    fn redraw(&mut self) {
-        let Some(window) = self.window.clone() else {
+    /// Takes a window away, hanging up every pane in it, and ends the
+    /// program when the last one goes.
+    fn close(&mut self, at: usize, event_loop: &ActiveEventLoop) {
+        if at < self.windows.len() {
+            self.windows.remove(at);
+        }
+        // Nothing else holds a window's painter but the windows, and a scale
+        // nobody is drawing at any more is a cache nobody will read.
+        self.painters
+            .retain(|(key, _)| self.windows.iter().any(|w| scale_key(w.scale) == *key));
+        if self.windows.is_empty() {
+            event_loop.exit();
+        }
+    }
+
+    fn redraw(&mut self, at: usize) {
+        let Some(state) = self.windows.get(at) else {
             return;
         };
-        let blinking = self.blinking();
-        let (band, cell_w) = self
-            .painter
-            .as_ref()
-            .map_or((0, 1), |p| (p.chrome as u32, p.cell.0 as u32));
-        let Some(painter) = self.painter.as_mut() else {
+        let scale = state.scale;
+        let font = state.session.font_config().clone();
+        let padding = state.session.window_config().padding;
+        let Ok(pi) = self.painter_for(scale, &font, padding) else {
             return;
         };
-        let Some(surface) = self.surface.as_mut() else {
-            return;
-        };
+        let painter = &mut self.painters[pi].1;
+        let state = &mut self.windows[at];
+
+        let window = state.window.clone();
+        let blinking = state.blinking();
+        let (band, cell_w) = (painter.chrome as u32, painter.cell.0 as u32);
 
         let size = window.inner_size();
         let (width, height) = (size.width.max(1), size.height.max(1));
         let (Some(w), Some(h)) = (NonZeroU32::new(width), NonZeroU32::new(height)) else {
             return;
         };
-        if surface.resize(w, h).is_err() {
+        if state.surface.resize(w, h).is_err() {
             return;
         }
 
         let (cols, rows) = painter.grid_size(width as usize, height as usize);
-        self.session.set_size(cols, rows);
+        state.session.set_size(cols, rows);
 
-        let model = tab_strip(&self.session, self.scale, cell_w, band);
-        self.strip = model.layout(width);
+        let model = tab_strip(&state.session, state.scale, cell_w, band);
+        state.strip = model.layout(width);
+        let (frame, cursor) = state.session.paint();
+        let background = state.session.theme().bg;
 
-        let (frame, cursor) = self.session.paint();
-        let background = self.session.theme().bg;
-
-        let Ok(mut buffer) = surface.buffer_mut() else {
+        let Ok(mut buffer) = state.surface.buffer_mut() else {
             return;
         };
         painter.paint(
@@ -242,7 +250,7 @@ impl WindowApp {
         );
 
         if let Some(mut cursor) = cursor {
-            if blinking && !self.blink.visible() {
+            if blinking && !state.blink.visible() {
                 cursor.alpha = 0;
             }
             let under = frame.get(cursor.at.0, cursor.at.1);
@@ -266,13 +274,17 @@ impl WindowApp {
             painter,
             &mut canvas,
             &model,
-            &self.strip,
-            self.hover,
-            self.session.theme(),
+            &state.strip,
+            state.hover,
+            state.session.theme(),
         );
-        let due = self
-            .snapshot_at
-            .is_some_and(|at| std::time::Instant::now() >= at);
+
+        // The snapshot belongs to the first window, which is the only one a
+        // capture ever opens.
+        let due = at == 0
+            && self
+                .snapshot_at
+                .is_some_and(|due| std::time::Instant::now() >= due);
         if due {
             // Typing waits for the window to settle, and the capture waits
             // again after it so the shell has echoed the line.
@@ -281,7 +293,7 @@ impl WindowApp {
                 // text as a region of its own and colours it, which is not
                 // what typing looks like.
                 for ch in text.chars() {
-                    let _ = self.session.handle_key(KeyPress {
+                    let _ = state.session.handle_key(KeyPress {
                         binding: KeyBinding::ch(ch),
                         bytes: ch.to_string().into_bytes(),
                     });
@@ -296,140 +308,103 @@ impl WindowApp {
         }
 
         let _ = buffer.present();
-        self.session.mark_drawn();
+        state.session.mark_drawn();
 
-        let title = self.session.window_title();
-        if title != self.title {
+        let title = state.session.window_title();
+        if title != state.title {
             window.set_title(&title);
-            self.title = title;
+            state.title = title;
         }
     }
 
-    /// Turns a pixel position into the cell under it.
-    /// Puts a resize pointer over a border that can be dragged.
-    ///
-    /// A border that resizes but gives no sign of it is a border nobody
-    /// finds; this is the only hint that dragging is possible at all.
-    fn show_resize_shape(&mut self, cell: (u16, u16)) {
-        let wanted = match self.session.resize_axis_at(cell.0, cell.1) {
-            Some(Axis::Horizontal) => CursorIcon::ColResize,
-            Some(Axis::Vertical) => CursorIcon::RowResize,
-            None => CursorIcon::Default,
-        };
-        if wanted != self.shape {
-            self.shape = wanted;
-            if let Some(window) = &self.window {
-                window.set_cursor(wanted);
-            }
-        }
+    /// The painter a window draws with, if its glyphs have been made yet.
+    fn painter_of(&self, at: usize) -> Option<&Painter> {
+        let key = scale_key(self.windows.get(at)?.scale);
+        self.painters
+            .iter()
+            .find(|(k, _)| *k == key)
+            .map(|(_, painter)| painter)
     }
 
-    fn cell_at(&self, x: f64, y: f64) -> (u16, u16) {
-        let Some(painter) = self.painter.as_ref() else {
-            return (0, 0);
-        };
-        let origin = (painter.chrome + painter.padding) as f64;
-        let col = ((x - painter.padding as f64).max(0.0) / painter.cell.0 as f64) as u16;
-        let row = ((y - origin).max(0.0) / painter.cell.1 as f64) as u16;
-        (col, row)
-    }
-
-    /// Whether the pointer is over the strip rather than the grid.
-    fn in_strip(&self, y: f64) -> bool {
-        self.painter.as_ref().is_some_and(|p| y < p.chrome as f64)
-    }
-
-    fn strip_hit(&self) -> StripHit {
-        let Some(painter) = self.painter.as_ref() else {
+    fn strip_hit(&self, at: usize) -> StripHit {
+        let (Some(state), Some(painter)) = (self.windows.get(at), self.painter_of(at)) else {
             return StripHit::Background;
         };
         let model = tab_strip(
-            &self.session,
-            self.scale,
+            &state.session,
+            state.scale,
             painter.cell.0 as u32,
             painter.chrome as u32,
         );
         model.hit(
-            &self.strip,
-            self.pointer_px.0 as i32,
-            self.pointer_px.1 as i32,
+            &state.strip,
+            state.pointer_px.0 as i32,
+            state.pointer_px.1 as i32,
         )
-    }
-
-    fn mouse(&mut self, button: MouseButton, kind: MouseKind) {
-        self.session.handle_mouse(MouseEvent {
-            button,
-            kind,
-            col: self.pointer.0,
-            row: self.pointer.1,
-            mods: keys::modifiers(self.modifiers),
-        });
     }
 }
 
 impl ApplicationHandler for WindowApp {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_some() {
+        if !self.windows.is_empty() {
             return;
         }
-        if let Err(e) = self.start(event_loop) {
+        let Some(session) = self.pending.take() else {
+            return;
+        };
+        if let Err(e) = self.open(event_loop, session) {
             eprintln!("caret: {e}");
             event_loop.exit();
         }
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
-        // Anything the window is told about is a sign of life, and the panes
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        let Some(at) = self.at(id) else {
+            return;
+        };
+        // Anything a window is told about is a sign of life, and its panes
         // are serviced at full speed for a moment afterwards.
         if !matches!(event, WindowEvent::RedrawRequested) {
-            self.active_at = Instant::now();
+            self.windows[at].active_at = Instant::now();
         }
 
         match event {
-            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::CloseRequested => self.close(at, event_loop),
 
             // The cursor stops blinking when the keyboard goes elsewhere.
             // A window nobody is typing into has nothing to announce, and
             // the blink is the only reason an idle terminal redraws at all.
             WindowEvent::Focused(has_keyboard) => {
-                self.focused = has_keyboard;
-                self.session.set_window_focused(has_keyboard);
-                self.typed_at = Instant::now();
-                self.blink.restart();
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
+                let state = &mut self.windows[at];
+                state.focused = has_keyboard;
+                state.session.set_window_focused(has_keyboard);
+                state.typed_at = Instant::now();
+                state.blink.restart();
+                state.window.request_redraw();
             }
 
-            WindowEvent::RedrawRequested => self.redraw(),
+            WindowEvent::RedrawRequested => self.redraw(at),
 
-            WindowEvent::Resized(_) => {
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
-            }
+            WindowEvent::Resized(_) => self.windows[at].window.request_redraw(),
 
             // Dragged onto a display with a different pixel density. The
             // glyphs were rasterised for the old one, so they have to be
             // drawn again or the text comes out the wrong size.
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 let scale = scale_factor as f32;
-                if (scale - self.scale).abs() > f32::EPSILON {
-                    match self.painter_at(scale) {
-                        Ok(painter) => {
-                            self.scale = scale;
-                            self.painter = Some(painter);
-                        }
+                if (scale - self.windows[at].scale).abs() > f32::EPSILON {
+                    let font = self.windows[at].session.font_config().clone();
+                    let padding = self.windows[at].session.window_config().padding;
+                    match self.painter_for(scale, &font, padding) {
+                        Ok(_) => self.windows[at].scale = scale,
                         Err(e) => eprintln!("caret: {e}"),
                     }
                 }
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
+                self.windows[at].window.request_redraw();
             }
 
             WindowEvent::ModifiersChanged(modifiers) => {
-                self.modifiers = modifiers.state();
+                self.windows[at].modifiers = modifiers.state();
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
@@ -437,53 +412,57 @@ impl ApplicationHandler for WindowApp {
                     return;
                 }
                 let text = event.text.as_ref().map(|t| t.as_str());
-                if let Some(press) = keys::key_press(&event.logical_key, text, self.modifiers) {
-                    self.typed_at = Instant::now();
-                    self.blink.restart();
-                    let _ = self.session.handle_key(press);
+                let state = &mut self.windows[at];
+                if let Some(press) = keys::key_press(&event.logical_key, text, state.modifiers) {
+                    state.typed_at = Instant::now();
+                    state.blink.restart();
+                    let _ = state.session.handle_key(press);
                 }
             }
 
             WindowEvent::CursorMoved { position, .. } => {
-                self.pointer_px = (position.x, position.y);
-                let hovered = self.strip_hit();
-                if hovered != self.hover {
-                    self.hover = hovered;
-                    if let Some(window) = &self.window {
-                        window.request_redraw();
-                    }
+                self.windows[at].pointer_px = (position.x, position.y);
+                let hovered = self.strip_hit(at);
+                if hovered != self.windows[at].hover {
+                    self.windows[at].hover = hovered;
+                    self.windows[at].window.request_redraw();
                 }
-                if self.in_strip(position.y) {
+                let Some(painter) = self.painter_of(at) else {
+                    return;
+                };
+                if position.y < painter.chrome as f64 {
                     return;
                 }
 
-                let cell = self.cell_at(position.x, position.y);
-                if cell != self.pointer {
-                    self.pointer = cell;
-                    self.show_resize_shape(cell);
+                let cell = cell_at(painter, position.x, position.y);
+                if cell != self.windows[at].pointer {
+                    self.windows[at].pointer = cell;
+                    self.windows[at].show_resize_shape(cell);
                     // Motion only matters while dragging or to an application
                     // that asked for it; the session decides which.
-                    self.mouse(MouseButton::None, MouseKind::Motion);
+                    self.windows[at].mouse(MouseButton::None, MouseKind::Motion);
                 }
             }
 
-            WindowEvent::CursorLeft { .. } if self.hover != StripHit::Background => {
-                self.hover = StripHit::Background;
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
+            WindowEvent::CursorLeft { .. } if self.windows[at].hover != StripHit::Background => {
+                self.windows[at].hover = StripHit::Background;
+                self.windows[at].window.request_redraw();
             }
 
             WindowEvent::MouseInput { state, button, .. } => {
-                self.typed_at = Instant::now();
-                if self.in_strip(self.pointer_px.1) {
+                self.windows[at].typed_at = Instant::now();
+                let in_strip = self
+                    .painter_of(at)
+                    .is_some_and(|painter| self.windows[at].pointer_px.1 < painter.chrome as f64);
+                if in_strip {
                     if state.is_pressed() {
-                        let _ = self.session.on_strip_hit(self.strip_hit());
+                        let hit = self.strip_hit(at);
+                        let _ = self.windows[at].session.on_strip_hit(hit);
                     }
                     return;
                 }
                 if let Some(button) = keys::mouse_button(button) {
-                    self.mouse(button, keys::mouse_kind(state));
+                    self.windows[at].mouse(button, keys::mouse_kind(state));
                 }
             }
 
@@ -500,7 +479,7 @@ impl ApplicationHandler for WindowApp {
                 } else {
                     MouseButton::WheelDown
                 };
-                self.mouse(button, MouseKind::Press);
+                self.windows[at].mouse(button, MouseKind::Press);
             }
 
             _ => {}
@@ -511,40 +490,89 @@ impl ApplicationHandler for WindowApp {
         // A `kill` or a logout stops the loop rather than the process, so
         // every pane's child is hung up on the way out instead of being
         // orphaned onto a pty nothing is reading.
-        if self.exiting || !self.session.is_running() || signals::ending() {
+        if self.exiting || signals::ending() {
             event_loop.exit();
             return;
         }
-        if self.session.pump(0).unwrap_or(false) {
-            self.active_at = Instant::now();
-        }
 
-        let beat = self.blinking() && self.blink.flipped();
-        // A snapshot waiting on a delay needs a frame of its own: by the time
-        // it falls due the window may have had nothing to redraw for seconds.
-        let due = self
-            .snapshot_at
-            .is_some_and(|at| self.snapshot.is_some() && Instant::now() >= at);
-        if self.session.needs_draw() || beat || due {
-            if let Some(window) = &self.window {
-                window.request_redraw();
+        // A window asking for another one, and windows that have run out of
+        // panes. Both are answered before anything is drawn, so a window
+        // that is going away is not painted first.
+        let mut wanted = Vec::new();
+        for at in 0..self.windows.len() {
+            if self.windows[at].session.took_window_request() {
+                wanted.push(at);
             }
         }
-        // The blink has to land on its own edge, which can be sooner than
-        // the next service tick is due.
-        let mut wake = if self.active_at.elapsed() < BUSY {
-            FRAME
-        } else {
-            IDLE
-        };
-        if self.blinking() {
-            wake = wake.min(self.blink.until_flip());
+        for from in wanted {
+            let cwd = self.windows[from].session.working_dir();
+            match Session::beside(&self.windows[from].session, cwd) {
+                Ok(session) => {
+                    if let Err(e) = self.open(event_loop, session) {
+                        eprintln!("caret: {e}");
+                    }
+                }
+                Err(e) => eprintln!("caret: could not open a window: {e}"),
+            }
         }
-        event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + wake));
+
+        if self.windows.iter().any(|w| w.session.is_quitting()) {
+            event_loop.exit();
+            return;
+        }
+        for at in (0..self.windows.len()).rev() {
+            if !self.windows[at].session.is_running() {
+                self.close(at, event_loop);
+            }
+        }
+        if self.windows.is_empty() {
+            event_loop.exit();
+            return;
+        }
+
+        let mut soonest = IDLE;
+        for at in 0..self.windows.len() {
+            let state = &mut self.windows[at];
+            if state.session.pump(0).unwrap_or(false) {
+                state.active_at = Instant::now();
+            }
+
+            let beat = state.blinking() && state.blink.flipped();
+            // A snapshot waiting on a delay needs a frame of its own: by the
+            // time it falls due the window may have had nothing to redraw
+            // for seconds.
+            let due = at == 0
+                && self.snapshot.is_some()
+                && self.snapshot_at.is_some_and(|at| Instant::now() >= at);
+            let state = &mut self.windows[at];
+            if state.session.needs_draw() || beat || due {
+                state.window.request_redraw();
+            }
+
+            // The blink has to land on its own edge, which can be sooner
+            // than the next service tick is due.
+            let mut wake = if state.active_at.elapsed() < BUSY {
+                FRAME
+            } else {
+                IDLE
+            };
+            if state.blinking() {
+                wake = wake.min(state.blink.until_flip());
+            }
+            soonest = soonest.min(wake);
+        }
+        event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + soonest));
     }
 }
 
-/// The strip as the layout sees it.
+/// Turns a pixel position into the cell under it.
+fn cell_at(painter: &Painter, x: f64, y: f64) -> (u16, u16) {
+    let origin = (painter.chrome + painter.padding) as f64;
+    let col = ((x - painter.padding as f64).max(0.0) / painter.cell.0 as f64) as u16;
+    let row = ((y - origin).max(0.0) / painter.cell.1 as f64) as u16;
+    (col, row)
+}
+
 fn tab_strip(session: &Session, scale: f32, cell_width: u32, height: u32) -> TabStrip {
     TabStrip {
         tabs: session.tab_items(),

@@ -5,4 +5,5 @@ pub mod cursor;
 pub mod keys;
 pub mod paint;
 pub mod snapshot;
+pub mod state;
 pub mod strip;

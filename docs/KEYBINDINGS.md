@@ -119,6 +119,7 @@ Layouts
 
 Tabs
   cmd+t / ctrl+b c                              Open a new tab
+  cmd+n                                         Open another window
   cmd+R / ctrl+b R                              Name this tab
   cmd+1 / ctrl+b 1                              Go to tab 1
   cmd+2 / ctrl+b 2                              Go to tab 2

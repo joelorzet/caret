@@ -160,3 +160,18 @@ fn unknown_keys_are_left_for_the_shell() {
         KeyResolution::Unbound
     );
 }
+
+// A window is asked for the way a tab is, and the name is what a
+// configuration file writes to rebind it.
+#[test]
+fn another_window_is_bound_and_named() {
+    let map = Keymap::default();
+    assert_eq!(
+        map.resolve(press("cmd+n"), false),
+        KeyResolution::Run(Action::NewWindow)
+    );
+    assert_eq!(Action::from_name("new_window"), Some(Action::NewWindow));
+    assert_eq!(Action::NewWindow.name(), "new_window".to_string());
+    assert!(!Action::NewWindow.description().is_empty());
+    assert_eq!(Action::NewWindow.group(), ActionGroup::Tabs);
+}

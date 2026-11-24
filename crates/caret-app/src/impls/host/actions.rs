@@ -93,6 +93,15 @@ impl Session {
                 self.apply_layout(&template)?;
             }
 
+            // Windows belong to the window layer, which looks for this on
+            // its way round the loop. Drawing inside another terminal
+            // there is no window to make, and a key that quietly does
+            // nothing is worse than one that says so.
+            Action::NewWindow => match self.native_window {
+                true => self.wants_window = true,
+                false => self.message = " windows need `caret run`".into(),
+            },
+
             Action::RenameTab => self.open_rename(),
             Action::NewTab => {
                 // Read before the tab exists: opening one moves the focus to
@@ -180,7 +189,10 @@ impl Session {
                 self.message = " fetching the newer release...".into();
                 self.begin_update_install();
             }
-            Action::Quit => self.running = false,
+            Action::Quit => {
+                self.quitting = true;
+                self.running = false;
+            }
         }
         Ok(())
     }

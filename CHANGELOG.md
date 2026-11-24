@@ -8,6 +8,14 @@ and a patch never does.
 
 ### Added
 
+- **A second window.** `cmd+n`, or `new_window` from the command palette,
+  opens another window with its own tabs, panes and focus, starting in the
+  directory of the pane you were in. Closing the last pane in a window
+  closes that window, closing the last window quits, and quitting from any
+  of them hangs up every pane in all of them. One event loop and one set of
+  rasterised glyphs serve every window, so the second costs about 7MB,
+  most of it the frame buffer; a window dragged to a display of another
+  density gets glyphs rasterised for that density.
 - **The ligatures a font provides are drawn.** `font.ligatures` was a
   setting that did nothing: every glyph was placed per cell, so a font bought
   for its ligatures looked like any other. A span of cells drawn alike is now

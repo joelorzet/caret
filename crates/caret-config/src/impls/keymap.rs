@@ -84,6 +84,7 @@ const DIRECT: &[(&str, &str)] = &[
     ("cmd+ctrl+up", "resize_up"),
     ("cmd+ctrl+down", "resize_down"),
     ("cmd+t", "new_tab"),
+    ("cmd+n", "new_window"),
     ("cmd+R", "rename_tab"),
     ("cmd+1", "select_tab:1"),
     ("cmd+2", "select_tab:2"),

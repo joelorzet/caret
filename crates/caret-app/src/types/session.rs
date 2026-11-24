@@ -108,4 +108,10 @@ pub struct Session {
     pub(crate) decoder: InputDecoder,
     pub(crate) needs_draw: bool,
     pub(crate) running: bool,
+    /// Set when something in here asked for another window. The window
+    /// layer owns windows, so this is left for it to find and clear.
+    pub(crate) wants_window: bool,
+    /// Whether stopping means the whole program rather than this window.
+    /// Running out of panes closes a window; quitting ends everything.
+    pub(crate) quitting: bool,
 }
