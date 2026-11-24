@@ -106,7 +106,10 @@ jobs:
           mkdir -p "$staging"
           cp target/release/caret "$staging/"
           cp README.md LICENSE CHANGELOG.md "$staging/"
-          cp -R docs "$staging/docs"
+          # The written docs, not the screenshots: six megabytes of PNG in a
+          # binary tarball helps nobody who is downloading a binary.
+          mkdir -p "$staging/docs"
+          cp docs/*.md "$staging/docs/"
           tar -czf "$staging.tar.gz" "$staging"
 
       - uses: actions/upload-artifact@v4
