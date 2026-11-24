@@ -915,6 +915,12 @@ impl Session {
                         }
                     }
                 }
+                TerminalEvent::CommandStarted => {
+                    if let Some(pane) = self.pane_mut(id) {
+                        pane.running_since = Some(std::time::Instant::now());
+                    }
+                }
+                TerminalEvent::CommandFinished(status) => self.command_finished(id, status),
                 TerminalEvent::ClipboardWrite(text) => self.clipboard_from_pane(text),
                 TerminalEvent::TitleChanged => {}
                 TerminalEvent::PromptMarked => {}

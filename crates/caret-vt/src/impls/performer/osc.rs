@@ -18,9 +18,14 @@ mod code {
 /// filling the clipboard on purpose.
 const MAX_CLIPBOARD: usize = 1 << 20;
 
-/// Shell-integration marks within OSC 133.
+/// Shell-integration marks within OSC 133: where the prompt starts, where
+/// what you typed starts, where the output starts, and what it exited
+/// with.
 mod mark {
     pub const PROMPT_START: &[u8] = b"A";
+    pub const INPUT_START: &[u8] = b"B";
+    pub const OUTPUT_START: &[u8] = b"C";
+    pub const FINISHED: &[u8] = b"D";
 }
 
 impl Performer<'_> {
@@ -44,9 +49,27 @@ impl Performer<'_> {
                 }
             }
             // Shell integration marks; the prompt boundary is the useful one.
-            code::SHELL_INTEGRATION if params.get(1) == Some(&mark::PROMPT_START) => {
-                self.term.push_event(TerminalEvent::PromptMarked);
-            }
+            code::SHELL_INTEGRATION => match params.get(1).copied() {
+                Some(mark::PROMPT_START) => {
+                    self.term.screen_mut().mark_prompt();
+                    self.term.push_event(TerminalEvent::PromptMarked);
+                }
+                Some(mark::OUTPUT_START) => {
+                    self.term.push_event(TerminalEvent::CommandStarted);
+                }
+                Some(mark::FINISHED) => {
+                    // `D` alone means finished without saying how, which
+                    // is what a shell sends when there was nothing to run.
+                    let status = params
+                        .get(2)
+                        .and_then(|text| String::from_utf8_lossy(text).trim().parse().ok());
+                    self.term.push_event(TerminalEvent::CommandFinished(status));
+                }
+                // Where input begins: part of the vocabulary, and
+                // nothing here needs it.
+                Some(mark::INPUT_START) => {}
+                _ => {}
+            },
 
             // A program asking for text to go on the clipboard. Reading
             // it back is never answered: a program that can ask what is on

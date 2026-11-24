@@ -27,6 +27,8 @@ impl Screen {
             slots: (0..cap).collect::<Vec<_>>().into_boxed_slice(),
             head: 0,
             len: rows as u32,
+            dropped: 0,
+            prompts: Vec::new(),
             scroll_offset: 0,
             scrollback_limit: scrollback,
             cursor: Cursor::default(),

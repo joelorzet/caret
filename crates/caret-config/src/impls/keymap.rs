@@ -102,6 +102,8 @@ const DIRECT: &[(&str, &str)] = &[
     ("shift+up", "scroll_lines:-1"),
     ("shift+down", "scroll_lines:1"),
     ("cmd+end", "scroll_to_bottom"),
+    ("cmd+up", "previous_command"),
+    ("cmd+down", "next_command"),
     ("cmd+c", "copy"),
     ("cmd+v", "paste"),
     ("cmd+slash", "show_shortcuts"),

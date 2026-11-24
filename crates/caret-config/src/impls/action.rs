@@ -58,7 +58,9 @@ impl Action {
             Action::Search
             | Action::ScrollLines(_)
             | Action::ScrollPage(_)
-            | Action::ScrollToBottom => ActionGroup::Scrollback,
+            | Action::ScrollToBottom
+            | Action::PreviousCommand
+            | Action::NextCommand => ActionGroup::Scrollback,
 
             Action::Copy | Action::Paste => ActionGroup::Clipboard,
 
@@ -123,6 +125,8 @@ impl Action {
             Action::ScrollPage(n) if *n < 0 => "Scroll back one page".into(),
             Action::ScrollPage(_) => "Scroll forward one page".into(),
             Action::ScrollToBottom => "Jump back to the live output".into(),
+            Action::PreviousCommand => "Scroll to the previous command".into(),
+            Action::NextCommand => "Scroll to the next command".into(),
             Action::Search => "Search the scrollback".into(),
 
             Action::Copy => "Copy the selection".into(),
@@ -175,6 +179,8 @@ impl Action {
             Action::ScrollLines(n) => format!("scroll_lines:{n}"),
             Action::ScrollPage(n) => format!("scroll_page:{n}"),
             Action::ScrollToBottom => "scroll_to_bottom".into(),
+            Action::PreviousCommand => "previous_command".into(),
+            Action::NextCommand => "next_command".into(),
             Action::Search => "search".into(),
 
             Action::Copy => "copy".into(),
@@ -251,6 +257,8 @@ impl Action {
             "scroll_lines" => Action::ScrollLines(num(-3)),
             "scroll_page" => Action::ScrollPage(num(-1)),
             "scroll_to_bottom" => Action::ScrollToBottom,
+            "previous_command" => Action::PreviousCommand,
+            "next_command" => Action::NextCommand,
             "search" => Action::Search,
 
             "copy" => Action::Copy,

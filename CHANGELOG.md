@@ -8,6 +8,11 @@ and a patch never does.
 
 ### Added
 
+- **Jump between commands, and see how the last one went.** When the shell
+  marks where a prompt begins and what a command exited with, `cmd+up` and
+  `cmd+down` scroll to the previous and next command, and a failure or
+  anything slow is reported in the status line as `exit 1 after 12s`. A
+  shell that sends no marks loses nothing and shows nothing new.
 - **Links in output can be opened.** URLs, and file paths that exist, with
   the line and column a compiler puts after them. Hold the platform's
   modifier and the link under the pointer underlines itself; click and a

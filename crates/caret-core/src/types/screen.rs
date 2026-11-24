@@ -25,6 +25,12 @@ pub struct Screen {
     pub(crate) head: u32,
     pub(crate) len: u32,
 
+    /// Rows that have left the buffer entirely, so a row can be named by
+    /// a number that does not change when older ones are dropped.
+    pub(crate) dropped: u64,
+    /// Where each command's prompt began, counted from the very first row
+    /// the pane ever had. Oldest first.
+    pub(crate) prompts: Vec<u64>,
     pub(crate) scroll_offset: u32,
     pub(crate) scrollback_limit: u32,
 

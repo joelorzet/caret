@@ -108,3 +108,50 @@ fn a_malformed_or_oversized_request_is_ignored() {
     vt.feed("\x1b]52;c\x07");
     assert!(vt.term.drain_events().next().is_none(), "no data at all");
 }
+
+// The shell says where a prompt begins, where output begins, and what the
+// command exited with. Without it the terminal cannot tell a prompt from
+// any other line, because a prompt is whatever the shell drew.
+#[test]
+fn the_shell_can_say_where_a_command_begins_and_ends() {
+    let mut vt = Vt::new(20, 4);
+    vt.feed("\x1b]133;A\x07prompt> ls\r\n");
+    assert_eq!(vt.term.screen().prompt_count(), 1);
+
+    vt.feed("\x1b]133;C\x07");
+    assert!(vt
+        .term
+        .drain_events()
+        .any(|e| e == TerminalEvent::CommandStarted));
+
+    vt.feed("\x1b]133;D;0\x07");
+    assert!(vt
+        .term
+        .drain_events()
+        .any(|e| e == TerminalEvent::CommandFinished(Some(0))));
+}
+
+#[test]
+fn a_failure_carries_its_status_and_a_bare_finish_carries_none() {
+    let mut vt = Vt::new(20, 4);
+    vt.feed("\x1b]133;D;130\x07");
+    assert!(vt
+        .term
+        .drain_events()
+        .any(|e| e == TerminalEvent::CommandFinished(Some(130))));
+
+    vt.feed("\x1b]133;D\x07");
+    assert!(vt
+        .term
+        .drain_events()
+        .any(|e| e == TerminalEvent::CommandFinished(None)));
+}
+
+// Marking where input begins is part of the same vocabulary and is not
+// something this needs to act on.
+#[test]
+fn the_input_mark_is_accepted_and_ignored() {
+    let mut vt = Vt::new(20, 4);
+    vt.feed("\x1b]133;B\x07");
+    assert!(vt.term.drain_events().next().is_none());
+}

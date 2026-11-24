@@ -15,6 +15,8 @@ impl Screen {
             // Dropping logical row 0 makes its slot the new bottom row, so a
             // full scrollback recycles in place without reallocating.
             self.head = ((self.head as u64 + 1) % self.cap as u64) as u32;
+            self.dropped += 1;
+            self.forget_dropped_prompts();
         }
 
         let slot = self.slot(self.len - 1);

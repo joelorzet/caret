@@ -13,6 +13,9 @@ impl Pane {
         Pane {
             terminal,
             parser: Parser::new(),
+            running_since: None,
+            last_status: None,
+            last_duration: None,
         }
     }
 
