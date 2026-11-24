@@ -49,6 +49,8 @@ impl GlyphCache {
             size,
             metrics,
             glyphs: HashMap::new(),
+            by_glyph: HashMap::new(),
+            shaped: HashMap::new(),
             blank: Glyph {
                 width: 0,
                 height: 0,

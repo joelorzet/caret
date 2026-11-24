@@ -6,3 +6,4 @@ pub mod font_family;
 pub mod font_library;
 pub mod glyph;
 pub mod glyph_cache;
+pub mod piece;

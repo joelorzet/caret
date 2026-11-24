@@ -315,7 +315,7 @@ theme = "tokyo-night"
 [font]
 family = "JetBrains Mono"
 size = 13.0
-ligatures = true           # accepted, not yet shaped; see the limitations
+ligatures = true           # let the font join != and => into its own glyph
 builtin_box_drawing = true # draw box characters ourselves, for seamless borders
 
 [terminal]
@@ -505,12 +505,11 @@ dependencies in `caret-core` or `caret-layout`.
 
 ## Not done yet
 
-- **Ligature shaping.** `font.ligatures` is accepted but the window draws one
-  glyph per cell, so `!=` stays two glyphs.
 - **GPU rendering.** Everything is rasterised and blended on the CPU.
-- **Shaping, and DCS sequences and character sets.** A letter and its marks
-  share a cell, but a script whose letters reshape each other is not drawn
-  the way it should be. See [docs/limitations.md](docs/limitations.md).
+- **Shaping for scripts that need it, DCS sequences, character sets.** A
+  letter and its marks share a cell and a font's ligatures are drawn, but a
+  script whose letters reshape each other is not drawn the way it should be.
+  See [docs/limitations.md](docs/limitations.md).
 - **Windows.** It needs a ConPTY backend. The seam is in one crate; see
   [docs/platforms.md](docs/platforms.md).
 

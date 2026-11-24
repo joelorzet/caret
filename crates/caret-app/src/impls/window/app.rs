@@ -149,6 +149,7 @@ impl WindowApp {
 
         let padding = (self.session.window_config().padding as f32 * scale) as usize;
         let mut painter = Painter::new(cache, padding, font.builtin_box_drawing);
+        painter.ligatures = font.ligatures;
         painter.chrome = painter.strip_height();
         Ok(painter)
     }
@@ -245,12 +246,15 @@ impl WindowApp {
                 cursor.alpha = 0;
             }
             let under = frame.get(cursor.at.0, cursor.at.1);
+            // What the cell shows rather than what it holds: a cell with a
+            // mark on it carries a handle, not a character.
+            let under_text = under.map(|cell| frame.grapheme(&cell).to_string());
             let mut canvas = Canvas {
                 pixels: &mut buffer,
                 width: width as usize,
                 height: height as usize,
             };
-            painter.draw_cursor(&mut canvas, cursor, under);
+            painter.draw_cursor(&mut canvas, cursor, under, under_text.as_deref());
         }
 
         let mut canvas = Canvas {

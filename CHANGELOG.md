@@ -8,6 +8,16 @@ and a patch never does.
 
 ### Added
 
+- **The ligatures a font provides are drawn.** `font.ligatures` was a
+  setting that did nothing: every glyph was placed per cell, so a font bought
+  for its ligatures looked like any other. A span of cells drawn alike is now
+  shaped as one run, and the font draws it its own way, whether that is one
+  wide glyph or a part of the joined shape in each cell. A cell with its own
+  background, a selected one, a wide character or a cell holding more than
+  one character ends the run and falls back to ordinary glyphs, because a
+  joined shape cannot show two backgrounds or be half selected. It costs
+  0.08ms a frame against the 17 to 26ms of handing a frame over, measured
+  and reproducible; with the setting off nothing is shaped at all.
 - **A letter and its accents are one cell.** A mark arriving after the
   letter it belongs to was dropped, so text that was typed or printed
   decomposed read wrongly and everything after it sat in the wrong column.

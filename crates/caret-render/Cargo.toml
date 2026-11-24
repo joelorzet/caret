@@ -12,4 +12,5 @@ caret-core.workspace = true
 caret-theme.workspace = true
 fontdb.workspace = true
 fontdue.workspace = true
+rustybuzz = "0.20.1"
 ttf-parser = "0.25.1"

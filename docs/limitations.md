@@ -60,13 +60,36 @@ cursor stops blinking when the window loses focus or when nobody has typed for
 ten seconds: one cell of animation was costing a full screen, twice a second,
 all day. A GPU backend is the real fix.
 
-**Ligatures are not shaped.** `font.ligatures` is accepted but the window draws
-one glyph per cell, so `!=` stays two glyphs. Shaping needs a layout pass over
-runs rather than per-cell rasterisation.
+**Ligatures are drawn, but only where a run is drawn alike.** A span of cells
+with the same colours and attributes is shaped as one run; a cell with its own
+background, a selected one, a wide character or a cell holding more than one
+character ends the run, so `!=` with the `=` selected falls back to two
+ordinary glyphs. That is deliberate: a joined shape cannot show two
+backgrounds or be half selected.
+
+It costs **0.08ms a frame**. Measured on a 200x50 grid of code in Cascadia
+Code: painting takes 0.52ms with the setting off and 0.60ms with it on, and
+the first frame of a window takes 1.15ms because every run on it is shaped
+once. Against the 17 to 26ms of handing the buffer over, that is well under
+one per cent of a frame. Reproduce it with
+`cargo test --release -p caret-app --test shaping_cost -- --ignored --nocapture`.
+*`caret-render/src/impls/shaping.rs`*
+
+**A row's backgrounds are laid before its glyphs.** A glyph may have more
+ink than the cell it advances by, and a joined shape is drawn across the
+cells of its run on purpose, so filling each background just before its own
+glyph would wipe out what the cell to the left had drawn there. Each row is
+therefore painted in two passes.
+*`caret-app/src/impls/window/paint.rs`*
+
+**A ligature in the chrome is not drawn.** Only pane content is shaped; the
+tab bar, status line and panels draw a glyph per cell. Nothing there is code,
+and the text is built a string at a time rather than a cell at a time.
 
 **No ligature detection.** `font.ligatures` is honoured as a setting, but
-`caret fonts` cannot say which families actually provide ligatures; that needs
-reading the GSUB feature table.
+`caret fonts` cannot say which families actually provide ligatures. The
+shaper now knows, since it can see whether a run came back changed, but it
+only knows about runs it has been asked about.
 
 ## Protocol
 
