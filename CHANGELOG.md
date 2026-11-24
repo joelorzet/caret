@@ -16,7 +16,9 @@ and a patch never does.
 - **`caret update`** says whether a newer release is out, and
   **`caret update --install`** fetches it, checks it against the published
   `SHA256SUMS` and puts it in place. Nothing is installed that does not match
-  its checksum.
+  its checksum, and the file to fetch is chosen from the names the release
+  lists rather than guessed at, so there is one place that decides what a
+  build is called.
 - **Look for a newer release** in the command palette, for asking on demand.
 
 ### Fixed

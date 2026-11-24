@@ -1,51 +1,79 @@
-use caret_update::{asset_for, hash_of, Version};
+use caret_update::{hash_of, pick_asset};
 
-fn v(text: &str) -> Version {
-    Version::parse(text).expect("a version")
-}
-
-// The names the release workflow builds. If the two drift apart, an update
-// downloads a 404 page and checks its hash against nothing.
-#[test]
-fn every_published_platform_has_a_name() {
-    assert_eq!(
-        asset_for(&v("0.1.1"), "macos", "aarch64").as_deref(),
-        Some("caret-0.1.1-macos-arm64.dmg")
-    );
-    assert_eq!(
-        asset_for(&v("0.1.1"), "macos", "x86_64").as_deref(),
-        Some("caret-0.1.1-macos-x86_64.dmg")
-    );
-    assert_eq!(
-        asset_for(&v("0.1.1"), "linux", "x86_64").as_deref(),
-        Some("caret-0.1.1-linux-x86_64.tar.gz")
-    );
-}
+/// What a release actually publishes, as its own checksums list it. Taken
+/// from v0.1.0 rather than made up, because the point of these tests is
+/// that nothing here depends on guessing the names right.
+const LISTING: &str = "\
+3cb2f7  caret-0.1.0-linux-x86_64.tar.gz
+9ac41e  caret-0.1.0-macos-arm64.app.zip
+71d0b8  caret-0.1.0-macos-arm64.dmg
+e5f207  caret-0.1.0-macos-x86_64.app.zip
+AA12FF *caret-0.1.0-macos-x86_64.dmg
+";
 
 #[test]
-fn a_platform_with_no_build_has_no_name() {
-    assert!(asset_for(&v("0.1.1"), "linux", "aarch64").is_none());
-    assert!(asset_for(&v("0.1.1"), "windows", "x86_64").is_none());
-    assert!(asset_for(&v("0.1.1"), "macos", "powerpc").is_none());
+fn each_machine_is_handed_the_build_that_is_for_it() {
+    assert_eq!(
+        pick_asset(LISTING, "macos", "aarch64").as_deref(),
+        Some("caret-0.1.0-macos-arm64.dmg")
+    );
+    assert_eq!(
+        pick_asset(LISTING, "macos", "x86_64").as_deref(),
+        Some("caret-0.1.0-macos-x86_64.dmg")
+    );
+    assert_eq!(
+        pick_asset(LISTING, "linux", "x86_64").as_deref(),
+        Some("caret-0.1.0-linux-x86_64.tar.gz")
+    );
+}
+
+// macOS publishes an image and a zipped bundle. The image is the one to
+// hand somebody, and the zip is there for anyone who wants the bundle.
+#[test]
+fn the_disk_image_is_preferred_over_the_zipped_bundle() {
+    let picked = pick_asset(LISTING, "macos", "aarch64").expect("a build");
+    assert!(picked.ends_with(".dmg"), "{picked}");
+}
+
+#[test]
+fn a_machine_with_no_build_is_told_so_rather_than_handed_the_wrong_one() {
+    assert!(pick_asset(LISTING, "linux", "aarch64").is_none());
+    assert!(pick_asset(LISTING, "windows", "x86_64").is_none());
+    assert!(pick_asset(LISTING, "macos", "powerpc").is_none());
+    assert!(pick_asset("", "macos", "aarch64").is_none());
+}
+
+// The names are whatever the release workflow called them. Renaming the
+// files, or publishing a build for something new, needs no change here as
+// long as the name still says which machine it is for.
+#[test]
+fn a_renamed_release_is_still_understood() {
+    let renamed = "\
+111  caret_2.0.0_linux_x86_64.tar.gz
+222  caret_2.0.0_macos_arm64.dmg
+";
+    assert_eq!(
+        pick_asset(renamed, "macos", "aarch64").as_deref(),
+        Some("caret_2.0.0_macos_arm64.dmg")
+    );
+    assert_eq!(
+        pick_asset(renamed, "linux", "x86_64").as_deref(),
+        Some("caret_2.0.0_linux_x86_64.tar.gz")
+    );
 }
 
 #[test]
 fn a_checksum_is_found_by_the_name_beside_it() {
-    let sums = "\
-aaa111  caret-0.1.1-linux-x86_64.tar.gz
-BBB222  caret-0.1.1-macos-arm64.dmg
-ccc333 *caret-0.1.1-macos-x86_64.dmg
-";
     assert_eq!(
-        hash_of(sums, "caret-0.1.1-macos-arm64.dmg").as_deref(),
-        Some("bbb222"),
-        "and case is not a difference that matters"
+        hash_of(LISTING, "caret-0.1.0-macos-arm64.dmg").as_deref(),
+        Some("71d0b8")
     );
-    // Some tools mark a binary file with a star; the name is still the name.
+    // Some tools mark a binary file with a star, and case is not a
+    // difference that matters in a hash.
     assert_eq!(
-        hash_of(sums, "caret-0.1.1-macos-x86_64.dmg").as_deref(),
-        Some("ccc333")
+        hash_of(LISTING, "caret-0.1.0-macos-x86_64.dmg").as_deref(),
+        Some("aa12ff")
     );
-    assert!(hash_of(sums, "caret-9.9.9-macos-arm64.dmg").is_none());
+    assert!(hash_of(LISTING, "caret-9.9.9-macos-arm64.dmg").is_none());
     assert!(hash_of("", "anything").is_none());
 }

@@ -12,7 +12,7 @@ mod types;
 
 pub use enums::outcome::Outcome;
 pub use impls::check::{check, download, fetch_latest, RELEASES};
-pub use impls::install::{asset_for, hash_of, install};
+pub use impls::install::{hash_of, install, pick_asset};
 pub use impls::state::{now, state_path};
 pub use types::check_state::CheckState;
 pub use types::release::Release;

@@ -9,36 +9,79 @@ use crate::impls::check::download;
 /// The checksums published beside the files.
 const SUMS: &str = "SHA256SUMS";
 
+/// How a published file says which machine it is for.
+///
+/// Selection criteria, not a name to build: the release workflow decides
+/// what its files are called, and the only thing agreed between the two is
+/// that the name carries these words. Rebuilding the name here would be a
+/// second copy of a rule nothing checks.
+struct Flavour {
+    /// What Rust calls the platform.
+    os: &'static str,
+    /// The word a file name carries for it.
+    word: &'static str,
+    /// Endings worth taking, the best first. macOS publishes an installable
+    /// image and a zipped bundle; the image is the one to hand somebody.
+    endings: &'static [&'static str],
+}
+
+const FLAVOURS: &[Flavour] = &[
+    Flavour {
+        os: "macos",
+        word: "macos",
+        endings: &[".dmg", ".app.zip"],
+    },
+    Flavour {
+        os: "linux",
+        word: "linux",
+        endings: &[".tar.gz"],
+    },
+];
+
+/// What published names call each architecture Rust has its own word for.
+const ARCHITECTURES: &[(&str, &str)] = &[("aarch64", "arm64"), ("x86_64", "x86_64")];
+
 impl Release {
     /// The file to fetch for the machine this is running on.
-    pub fn asset(&self) -> Option<String> {
-        asset_for(&self.version, std::env::consts::OS, std::env::consts::ARCH)
+    pub fn asset(&self, listing: &str) -> Option<String> {
+        pick_asset(listing, std::env::consts::OS, std::env::consts::ARCH)
     }
 }
 
-/// What a release calls its download for one platform.
+/// Chooses a published file for one platform, out of the names the release
+/// itself lists.
 ///
-/// Taken apart from the machine it runs on so the naming can be tested; the
-/// names are the ones the release workflow builds.
-pub fn asset_for(version: &Version, os: &str, arch: &str) -> Option<String> {
-    let arch = match arch {
-        "aarch64" => "arm64",
-        "x86_64" => "x86_64",
-        _ => return None,
-    };
-    match os {
-        "macos" => Some(format!("caret-{version}-macos-{arch}.dmg")),
-        "linux" if arch == "x86_64" => Some(format!("caret-{version}-linux-x86_64.tar.gz")),
-        _ => None,
-    }
+/// `SHA256SUMS` names every file in the release and is downloaded anyway to
+/// check what arrives, so it serves as the release's own list of what it
+/// published. Nothing here invents a name: it recognises one.
+pub fn pick_asset(listing: &str, os: &str, arch: &str) -> Option<String> {
+    let flavour = FLAVOURS.iter().find(|f| f.os == os)?;
+    let (_, word) = ARCHITECTURES.iter().find(|(rust, _)| *rust == arch)?;
+
+    let names: Vec<&str> = listing.lines().filter_map(file_named).collect();
+    flavour.endings.iter().find_map(|ending| {
+        names
+            .iter()
+            .find(|name| {
+                name.ends_with(ending) && name.contains(flavour.word) && name.contains(word)
+            })
+            .map(|name| name.to_string())
+    })
 }
 
-/// The hash `SHA256SUMS` records for one file.
-pub fn hash_of(sums: &str, file: &str) -> Option<String> {
-    sums.lines().find_map(|line| {
-        let (hash, name) = line.split_once(char::is_whitespace)?;
-        (name.trim().trim_start_matches('*') == file).then(|| hash.trim().to_lowercase())
+/// The hash the listing records for one file.
+pub fn hash_of(listing: &str, file: &str) -> Option<String> {
+    listing.lines().find_map(|line| {
+        let (hash, _) = line.split_once(char::is_whitespace)?;
+        (file_named(line)? == file).then(|| hash.trim().to_lowercase())
     })
+}
+
+/// The file a checksum line is about.
+fn file_named(line: &str) -> Option<&str> {
+    let (_, name) = line.split_once(char::is_whitespace)?;
+    let name = name.trim().trim_start_matches('*');
+    (!name.is_empty()).then_some(name)
 }
 
 /// Downloads a release and puts it where the running copy is.
@@ -48,27 +91,28 @@ pub fn hash_of(sums: &str, file: &str) -> Option<String> {
 /// that does not match the published checksum: the download comes over the
 /// network, and a terminal is not a thing to take on trust.
 pub fn install(release: &Release) -> Result<String, String> {
-    let file = release
-        .asset()
-        .ok_or("there is no published build for this platform")?;
-
     let dir = std::env::temp_dir().join(format!("caret-update-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).map_err(|e| format!("no room to download into: {e}"))?;
+
+    // The checksums first: they are the release's own list of what it
+    // published, so they say both what to fetch and what it should be.
+    let sums = dir.join(SUMS);
+    if !download(&release.download_url(SUMS), &sums) {
+        return Err(format!("could not reach the release to read its {SUMS}"));
+    }
+    let listing = std::fs::read_to_string(&sums).map_err(|e| format!("unreadable {SUMS}: {e}"))?;
+
+    let file = release
+        .asset(&listing)
+        .ok_or("this release has no build for this platform")?;
+    let published =
+        hash_of(&listing, &file).ok_or_else(|| format!("{SUMS} does not list {file}"))?;
 
     let archive = dir.join(&file);
     if !download(&release.download_url(&file), &archive) {
         return Err(format!("could not download {file}"));
     }
-    let sums = dir.join(SUMS);
-    if !download(&release.download_url(SUMS), &sums) {
-        return Err("could not download the checksums".into());
-    }
-
-    let published = std::fs::read_to_string(&sums)
-        .ok()
-        .and_then(|text| hash_of(&text, &file))
-        .ok_or_else(|| format!("{SUMS} does not list {file}"))?;
     let got = sha256(&archive).ok_or("no sha256 command to check the download with")?;
     if got != published {
         return Err(format!("{file} does not match its published checksum"));

@@ -402,7 +402,7 @@ caret-app       the window, the event loop, input, both renderers
 | `caret-render` | core, theme, fontdb, fontdue | 34 |
 | `caret-features` | none | 109 |
 | `caret-ui` | none | 20 |
-| `caret-update` | none | 17 |
+| `caret-update` | none | 19 |
 | `caret-app` | all of the above, winit, softbuffer | 63 |
 
 The house rules are written down in [CONVENTIONS.md](docs/CONVENTIONS.md) and worth
