@@ -1,0 +1,8 @@
+[package]
+name = "caret-core"
+description = "Terminal domain model: cells, colors, grid, cursor. No I/O, no dependencies."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]

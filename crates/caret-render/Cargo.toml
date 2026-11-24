@@ -1,0 +1,13 @@
+[package]
+name = "caret-render"
+description = "Font discovery and the rendering interface"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+caret-core.workspace = true
+caret-theme.workspace = true
+fontdb.workspace = true
+fontdue.workspace = true
+ttf-parser = "0.25.1"

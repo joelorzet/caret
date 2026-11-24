@@ -1,0 +1,11 @@
+[package]
+name = "caret-vt"
+description = "Escape sequence parser driving the terminal state"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+caret-core.workspace = true
+vte.workspace = true
+unicode-width = "0.2"

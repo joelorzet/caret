@@ -1,0 +1,22 @@
+[package]
+name = "caret-app"
+description = "Window shell: event loop, input routing and session wiring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+caret-core.workspace = true
+caret-layout.workspace = true
+caret-config.workspace = true
+caret-theme.workspace = true
+caret-vt.workspace = true
+caret-pty.workspace = true
+caret-features.workspace = true
+caret-render.workspace = true
+caret-ui.workspace = true
+winit.workspace = true
+softbuffer.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true

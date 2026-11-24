@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>caret</string>
+  <key>CFBundleDisplayName</key>
+  <string>caret</string>
+  <key>CFBundleIdentifier</key>
+  <string>dev.caret.app</string>
+  <key>CFBundleVersion</key>
+  <string>__VERSION__</string>
+  <key>CFBundleShortVersionString</key>
+  <string>__VERSION__</string>
+  <key>CFBundleExecutable</key>
+  <string>caret</string>
+  <key>CFBundleIconFile</key>
+  <string>caret</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>11.0</string>
+  <!-- A terminal is not a document viewer; it opens its own window. -->
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.developer-tools</string>
+  <!-- Draw into the full window, including behind the title bar, which is
+       where the tab strip lives. -->
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>NSSupportsAutomaticGraphicsSwitching</key>
+  <true/>
+</dict>
+</plist>

@@ -1,0 +1,8 @@
+[package]
+name = "caret-features"
+description = "Built-in panels: the file explorer and the agent dock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]

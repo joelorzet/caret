@@ -1,0 +1,141 @@
+name: release
+
+# Releases are cut from a tag, never from a push to main. A tag is a name a
+# person chose for a state of the tree, which is what a download has to be;
+# main moves whenever a patch lands and would make every merge a release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Nothing is built or published until the same checks that guard main have
+  # passed on the tagged tree.
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: tag matches Cargo.toml
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: read
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Cargo.toml says $version"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match version $version in Cargo.toml"
+            exit 1
+          fi
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    needs: [verify, version]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: arm64
+          - runner: macos-13
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Bundle the app and a disk image
+        run: ./scripts/bundle-mac.sh --dmg
+
+      - name: Name the artefacts
+        run: |
+          version=${{ needs.version.outputs.version }}
+          cd target/macos
+          mv "caret-$version.dmg" "caret-$version-macos-${{ matrix.arch }}.dmg"
+          ditto -c -k --keepParent caret.app "caret-$version-macos-${{ matrix.arch }}.app.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            target/macos/*.dmg
+            target/macos/*.app.zip
+          if-no-files-found: error
+
+  linux:
+    name: Linux x86_64
+    needs: [verify, version]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libx11-dev libxcursor-dev libxi-dev libxrandr-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Package
+        run: |
+          version=${{ needs.version.outputs.version }}
+          staging=caret-$version-linux-x86_64
+          mkdir -p "$staging"
+          cp target/release/caret "$staging/"
+          cp README.md LICENSE CHANGELOG.md "$staging/"
+          cp -R docs "$staging/docs"
+          tar -czf "$staging.tar.gz" "$staging"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: caret-*-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  publish:
+    name: publish the release
+    needs: [version, macos, linux]
+    runs-on: ubuntu-latest
+    # A manual run builds and keeps the artefacts without publishing: only a
+    # tag becomes a release.
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd artefacts
+          shasum -a 256 * > SHA256SUMS
+          cat SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: caret ${{ needs.version.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: artefacts/*

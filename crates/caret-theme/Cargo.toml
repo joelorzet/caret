@@ -1,0 +1,9 @@
+[package]
+name = "caret-theme"
+description = "Theme model and built-in themes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+caret-core.workspace = true

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  caret's mark: a shell prompt and the block cursor waiting after it.
+
+  Drawn on a 1024 grid, which is what macOS icon sizes divide into cleanly.
+  scripts/icon.py draws the same geometry from the same fractions, so the
+  .icns and this file cannot drift apart.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>caret</title>
+
+  <defs>
+    <!-- The body is flat; the hairline is what separates it from a dark
+         desktop, so it is a stroke rather than a gradient. -->
+    <clipPath id="body">
+      <rect x="61.44" y="61.44" width="901.12" height="901.12" rx="230.4" ry="230.4"/>
+    </clipPath>
+  </defs>
+
+  <rect x="61.44" y="61.44" width="901.12" height="901.12" rx="230.4" ry="230.4" fill="#15191f"/>
+  <rect x="69.63" y="69.63" width="884.74" height="884.74" rx="222.21" ry="222.21"
+        fill="none" stroke="#2e3744" stroke-width="16.38"/>
+
+  <g clip-path="url(#body)">
+    <!-- The prompt. Round caps and joins: a terminal's own glyphs are drawn
+         with a pen, not a chisel. -->
+    <path d="M 271.67 394.24 L 501.45 512 L 271.67 629.76"
+          fill="none" stroke="#7ee787" stroke-width="76.8"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- The cursor, the same height as the prompt so the two sit on one
+         line, with a gap wide enough to survive a 16 pixel icon. -->
+    <rect x="642.25" y="394.24" width="148.48" height="235.52" rx="36" ry="36" fill="#6ca4f8"/>
+  </g>
+</svg>

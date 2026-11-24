@@ -1,0 +1,13 @@
+[package]
+name = "caret-config"
+description = "Actions, keybindings and configuration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+caret-core.workspace = true
+caret-layout.workspace = true
+caret-theme.workspace = true
+serde.workspace = true
+toml.workspace = true

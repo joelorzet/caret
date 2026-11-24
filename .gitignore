@@ -1,0 +1,16 @@
+# Build output
+/target
+
+# The icon is drawn by scripts/icon.py and rebuilt with each bundle, so the
+# generated forms are not kept here. assets/caret.svg is the source.
+/macos/caret.icns
+/macos/caret.iconset/
+
+# Editor and platform leftovers
+.DS_Store
+*.swp
+*.swo
+*.swn
+*~
+.#*
+**/*.rs.bk

@@ -1,0 +1,56 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"   # Option::is_none_or
+license = "MIT"
+
+[workspace.dependencies]
+caret-core     = { path = "crates/caret-core" }
+caret-layout   = { path = "crates/caret-layout" }
+caret-vt       = { path = "crates/caret-vt" }
+caret-pty      = { path = "crates/caret-pty" }
+caret-theme    = { path = "crates/caret-theme" }
+caret-config   = { path = "crates/caret-config" }
+caret-features = { path = "crates/caret-features" }
+caret-render   = { path = "crates/caret-render" }
+caret-ui       = { path = "crates/caret-ui" }
+caret-app      = { path = "crates/caret-app" }
+
+vte        = { version = "0.15", default-features = false, features = ["std"] }
+rustix     = { version = "1.1", features = ["std", "process", "pty", "termios", "stdio", "fs", "event"] }
+libc       = "0.2"
+polling    = "3.11"
+winit      = "0.30"
+softbuffer = "0.4"
+fontdue    = "0.9"
+fontdb     = { version = "0.24", default-features = false, features = ["fs", "memmap"] }
+serde      = { version = "1", features = ["derive"] }
+toml       = "1"
+
+[package]
+name = "caret"
+description = "A fast, memory-lean terminal emulator with native tmux-style splits"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "caret"
+path = "src/main.rs"
+
+[dependencies]
+caret-app.workspace = true
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release.package."*"]
+opt-level = 3
