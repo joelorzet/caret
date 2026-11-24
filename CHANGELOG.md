@@ -4,6 +4,26 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## 0.1.2
+
+### Fixed
+
+- **Going full screen left the prompt in the middle of a pane.** Every
+  resize pads the buffer out to the new height, and that padding was
+  counted as content, so the next time the window grew it was revealed the
+  way scrollback is revealed. Rows below the cursor that hold nothing are
+  now trimmed before a resize decides what to keep.
+- A test asserted macOS behaviour on every platform and was flaky on
+  Linux. What a program writes as it exits is kept by macOS and dropped by
+  Linux, which is now recorded in the limitations rather than asserted
+  away.
+
+### Changed
+
+- A release refuses to publish over a tag that already has one. A
+  published tag names a download somebody may already have, so moving it
+  would hand them different code under the same name.
+
 ## 0.1.1
 
 ### Added
