@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -38,41 +42,35 @@ jobs:
             exit 1
           fi
 
+  # One macOS runner, building both architectures into one binary. Two jobs
+  # meant asking for two of the scarcest runners GitHub has, and a release
+  # waited twenty minutes and then lost the second one twice over.
   macos:
-    name: macOS ${{ matrix.arch }}
+    name: macOS universal
     needs: [verify, version]
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-latest
-            arch: arm64
-          # The last Intel image GitHub publishes: macos-13 was retired in
-          # December 2025, and this one is supported into 2027. When it goes,
-          # so does the Intel build.
-          - runner: macos-15-intel
-            arch: x86_64
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Bundle the app and a disk image
-        run: ./scripts/bundle-mac.sh --dmg
+        run: ./scripts/bundle-mac.sh --dmg --universal
 
       - name: Name the artefacts
         run: |
           version=${{ needs.version.outputs.version }}
           cd target/macos
-          mv "caret-$version.dmg" "caret-$version-macos-${{ matrix.arch }}.dmg"
-          ditto -c -k --keepParent caret.app "caret-$version-macos-${{ matrix.arch }}.app.zip"
+          mv "caret-$version.dmg" "caret-$version-macos.dmg"
+          ditto -c -k --keepParent caret.app "caret-$version-macos.app.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}
+          name: macos
           path: |
             target/macos/*.dmg
             target/macos/*.app.zip

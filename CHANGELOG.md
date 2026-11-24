@@ -92,6 +92,11 @@ The first release.
 
 ### Packaging
 
+- A release ships **one macOS disk image**, universal for Apple silicon and
+  Intel, built on a single runner. Two runners meant asking for two of the
+  scarcest machines GitHub has, and a release waited twenty minutes before
+  losing the second one.
+
 - `scripts/bundle-mac.sh` builds `caret.app` and a disk image, with the icon
   drawn by a script rather than stored as a binary.
 - Settings written under the project's former name are adopted on first run

@@ -13,16 +13,34 @@ version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
 
 install=false
 dmg=false
+universal=false
 for arg in "$@"; do
   case $arg in
     --install) install=true ;;
     --dmg) dmg=true ;;
-    *) echo "usage: $0 [--install] [--dmg]" >&2; exit 2 ;;
+    --universal) universal=true ;;
+    *) echo "usage: $0 [--install] [--dmg] [--universal]" >&2; exit 2 ;;
   esac
 done
 
 echo "building caret $version"
-cargo build --release --quiet
+if $universal; then
+  # Both architectures from one machine, which is one macOS runner instead
+  # of two. They are scarce enough that asking for a second is what keeps
+  # a release waiting.
+  for target in aarch64-apple-darwin x86_64-apple-darwin; do
+    rustup target add "$target" >/dev/null 2>&1 || true
+    cargo build --release --quiet --target "$target"
+  done
+  mkdir -p "$out"
+  lipo -create -output "$out/caret" \
+    target/aarch64-apple-darwin/release/caret \
+    target/x86_64-apple-darwin/release/caret
+  binary=$out/caret
+else
+  cargo build --release --quiet
+  binary=target/release/caret
+fi
 
 # The icon is drawn rather than stored, so it is rebuilt with the bundle.
 python3 -I scripts/icon.py macos/caret.icns >/dev/null
@@ -31,7 +49,7 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 
 sed "s/__VERSION__/$version/g" macos/Info.plist > "$app/Contents/Info.plist"
-cp target/release/caret "$app/Contents/MacOS/caret"
+cp "$binary" "$app/Contents/MacOS/caret"
 cp macos/caret.icns "$app/Contents/Resources/caret.icns"
 printf 'APPL????' > "$app/Contents/PkgInfo"
 
@@ -68,4 +86,5 @@ if $dmg; then
     -ov -format ULFO "$out/caret-$version.dmg"
   rm -rf "$staging"
   echo "built $out/caret-$version.dmg"
+  lipo -archs "$app/Contents/MacOS/caret"
 fi
