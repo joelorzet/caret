@@ -8,6 +8,13 @@ and a patch never does.
 
 ### Added
 
+- **A long command that finishes in a pane you are not watching says so.**
+  When a command takes longer than `notify_after` seconds, the status line
+  reports it, and if you have moved to another pane or another window the
+  report arrives as a desktop notification naming the pane, the exit status
+  and how long it took. A command you sat and watched never raises one.
+  `notify_finish` under `[terminal]` takes `off`, `status` or `system`, and
+  it uses the same prompt marks the command jumps do.
 - **Jump between commands, and see how the last one went.** When the shell
   marks where a prompt begins and what a command exited with, `cmd+up` and
   `cmd+down` scroll to the previous and next command, and a failure or

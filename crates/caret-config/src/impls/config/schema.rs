@@ -46,6 +46,8 @@ const SCHEMA: &[(&str, &[&str])] = &[
             "highlight_input",
             "clipboard_write",
             "confirm_paste",
+            "notify_finish",
+            "notify_after",
             "mouse",
         ],
     ),

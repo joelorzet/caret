@@ -389,6 +389,7 @@ impl ApplicationHandler for WindowApp {
             // the blink is the only reason an idle terminal redraws at all.
             WindowEvent::Focused(has_keyboard) => {
                 self.focused = has_keyboard;
+                self.session.set_window_focused(has_keyboard);
                 self.typed_at = Instant::now();
                 self.blink.restart();
                 if let Some(window) = &self.window {

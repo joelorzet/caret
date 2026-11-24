@@ -173,6 +173,18 @@ impl Config {
             ),
             row(
                 "terminal",
+                "notify_finish",
+                t.notify_finish.name().to_string(),
+                "say when a long command finishes elsewhere",
+            ),
+            row(
+                "terminal",
+                "notify_after",
+                t.notify_after.to_string(),
+                "seconds before a finish is worth saying",
+            ),
+            row(
+                "terminal",
                 "mouse",
                 t.mouse.to_string(),
                 "report mouse events to programs",

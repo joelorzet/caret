@@ -78,6 +78,10 @@ pub struct Session {
     /// False while running inside another terminal, which keeps Cmd for
     /// itself. The shortcut panel hides bindings that cannot fire.
     pub(crate) native_window: bool,
+    /// Whether the window has the keyboard. A finish in the pane you are
+    /// watching needs no announcement; one behind another application
+    /// does.
+    pub(crate) window_focused: bool,
     /// Position in the preset cycle, for the next-layout command.
     pub(crate) layout_cycle: usize,
     pub(crate) size: (u16, u16),

@@ -3,6 +3,7 @@ pub mod action_group;
 pub mod bell_style;
 pub mod config;
 pub mod cursor_fill;
+pub mod finish_notice;
 pub mod hex;
 pub mod key;
 pub mod key_binding;

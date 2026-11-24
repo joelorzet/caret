@@ -10,6 +10,7 @@ pub(crate) use crate::enums::action::*;
 pub(crate) use crate::enums::action_group::*;
 pub(crate) use crate::enums::bell_style::*;
 pub(crate) use crate::enums::cursor_fill::*;
+pub(crate) use crate::enums::finish_notice::*;
 pub(crate) use crate::enums::key::*;
 pub(crate) use crate::enums::key_resolution::*;
 pub(crate) use crate::enums::paste_confirm::*;
