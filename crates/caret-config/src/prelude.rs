@@ -12,6 +12,7 @@ pub(crate) use crate::enums::bell_style::*;
 pub(crate) use crate::enums::cursor_fill::*;
 pub(crate) use crate::enums::key::*;
 pub(crate) use crate::enums::key_resolution::*;
+pub(crate) use crate::enums::paste_confirm::*;
 pub(crate) use crate::enums::platform::*;
 pub(crate) use crate::impls::hex::parse_hex;
 pub(crate) use crate::impls::raw::*;

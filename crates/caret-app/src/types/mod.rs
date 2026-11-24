@@ -10,6 +10,7 @@ pub mod mouse_event;
 pub mod palette;
 pub mod palette_item;
 pub mod pane;
+pub mod pending_paste;
 pub mod raw_mode;
 pub mod rearrange;
 pub mod search_state;

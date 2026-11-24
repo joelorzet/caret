@@ -6,6 +6,7 @@ pub mod cursor;
 pub mod docks;
 pub mod palette;
 pub mod panes;
+pub mod paste;
 pub mod preview;
 pub mod status;
 pub mod tabs;
@@ -92,10 +93,14 @@ impl Session {
         if self.rearrange.is_some() {
             self.draw_arrange(&mut surface);
         }
+        if self.pending_paste.is_some() {
+            self.draw_paste(&mut surface);
+        }
 
         let cursor = match self.focus {
-            // Nothing is being typed into while the panes are being moved.
-            _ if self.rearrange.is_some() => None,
+            // Nothing is being typed into while the panes are being moved,
+            // or while a paste is waiting to be answered.
+            _ if self.rearrange.is_some() || self.pending_paste.is_some() => None,
             FocusTarget::Panes => focused.map(|rect| (tab.focus(), rect)),
             FocusTarget::Agent => frame
                 .right

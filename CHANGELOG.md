@@ -4,6 +4,19 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## Unreleased
+
+### Added
+
+- **A paste that carries more than one line is shown before it is sent.**
+  Pasting runs what you pasted, and a snippet copied from a web page can
+  carry a trailing newline or a second line you did not notice. The panel
+  says how many lines and characters, calls out a trailing newline because
+  that is what turns a paste into a run, names any control characters, and
+  shows the text with them made visible rather than obeyed. Enter sends,
+  escape drops. `confirm_paste` under `[terminal]` takes `always`,
+  `notable` or `never`.
+
 ## 0.1.4
 
 ### Fixed

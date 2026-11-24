@@ -13,6 +13,7 @@ pub(crate) use crate::types::entry::*;
 pub(crate) use crate::types::explorer::*;
 pub(crate) use crate::types::highlight_state::*;
 pub(crate) use crate::types::panel_line::*;
+pub(crate) use crate::types::paste_review::*;
 pub(crate) use crate::types::preview::*;
 pub(crate) use crate::types::shell_span::*;
 pub(crate) use crate::types::syntax::*;

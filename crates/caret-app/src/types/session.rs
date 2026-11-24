@@ -37,6 +37,8 @@ pub struct Session {
     pub(crate) search: Option<SearchState>,
     /// The tab name being typed, if one is.
     pub(crate) renaming: Option<String>,
+    /// A paste waiting to be confirmed.
+    pub(crate) pending_paste: Option<PendingPaste>,
     pub(crate) preview: Option<Preview>,
     pub(crate) autocomplete: Autocomplete,
     /// What names run something, for colouring only lines that would.

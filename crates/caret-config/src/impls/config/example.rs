@@ -55,6 +55,9 @@ highlight_input = true # colour the command line as you type it
 # Let a program running in a pane put text on the clipboard, which is how
 # an editor's yank reaches it. Reading the clipboard is never allowed.
 clipboard_write = true
+# Pasting runs what you pasted, so a paste carrying a line break, a control
+# character or a great deal of text is shown first.
+confirm_paste = "notable"  # always | notable | never
 mouse = true           # click to focus, wheel to scroll, and report to apps
 
 [chrome]

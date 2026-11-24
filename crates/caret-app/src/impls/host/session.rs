@@ -14,9 +14,6 @@ const MESSAGE_LIFE: std::time::Duration = std::time::Duration::from_secs(6);
 /// Editors that take `+n` to open on a line.
 const OPENS_AT_LINE: [&str; 6] = ["vi", "vim", "nvim", "nano", "pico", "helix"];
 
-/// Room for the two bracketed-paste markers, so the buffer is sized once.
-const PASTE_MARKERS: usize = 12;
-
 /// How long to wait for activity before looking round again, in
 /// milliseconds. Long enough to be idle-cheap, short enough to notice a
 /// child that exited without closing its terminal.
@@ -59,6 +56,7 @@ impl Session {
             last_click: None,
             search: None,
             renaming: None,
+            pending_paste: None,
             preview: None,
             autocomplete: Autocomplete::new(
                 Session::history_path()
@@ -933,6 +931,13 @@ impl Session {
             return self.palette_key(&press);
         }
 
+        // A paste on screen is a question: nothing else happens until it
+        // is answered, because the answer decides what reaches the shell.
+        if self.is_confirming_paste() {
+            self.paste_key(&press);
+            return Ok(());
+        }
+
         // Naming a tab takes every key, so a name can hold the characters
         // the bindings use.
         if self.is_renaming() {
@@ -1125,40 +1130,6 @@ impl Session {
     /// Newlines become carriage returns, which is what Enter sends, and the
     /// text is bracketed when the application asked for mode 2004 so an editor
     /// can tell a paste from typing and skip its auto-indent.
-    pub(crate) fn on_paste(&mut self, text: Vec<u8>) {
-        let target = match self.focus {
-            FocusTarget::Agent => self.agent,
-            _ => Some(self.workspace.active_pane()),
-        };
-        let Some(id) = target else { return };
-
-        let bracketed = self
-            .pane(id)
-            .is_some_and(|p| p.terminal.modes().contains(Modes::BRACKETED_PASTE));
-
-        let mut body: Vec<u8> = Vec::with_capacity(text.len() + PASTE_MARKERS);
-        let mut previous = 0u8;
-        for byte in text {
-            match byte {
-                b'\n' if previous == b'\r' => {}
-                b'\n' => body.push(b'\r'),
-                other => body.push(other),
-            }
-            previous = byte;
-        }
-
-        let mut out = Vec::with_capacity(body.len() + PASTE_MARKERS);
-        if bracketed {
-            out.extend_from_slice(b"\x1b[200~");
-        }
-        out.extend_from_slice(&body);
-        if bracketed {
-            out.extend_from_slice(b"\x1b[201~");
-        }
-        let _ = self.ptys.write(PtyId(id.0), &out);
-        self.needs_draw = true;
-    }
-
     /// The selected text, if there is a selection.
     pub(crate) fn selection_text(&self) -> Option<String> {
         let (id, selection) = self.selection.as_ref()?;
