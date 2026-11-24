@@ -17,6 +17,7 @@ pub use crate::enums::bell_style::*;
 pub use crate::enums::cursor_fill::CursorFill;
 pub use crate::enums::key::*;
 pub use crate::enums::key_resolution::*;
+pub use crate::enums::paste_confirm::*;
 pub use crate::enums::platform::*;
 pub use crate::impls::config::example::EXAMPLE;
 pub use crate::impls::hex::parse_hex;

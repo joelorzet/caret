@@ -9,6 +9,7 @@ pub mod key_binding;
 pub mod key_parse_error;
 pub mod keymap;
 pub mod modifiers;
+pub mod paste_confirm;
 pub mod paths;
 pub mod platform;
 pub mod raw;

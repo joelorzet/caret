@@ -10,7 +10,7 @@ pub(crate) use caret_core::{
 };
 pub(crate) use caret_features::{
     shell_spans, Autocomplete, CommandIndex, Explorer, LineKind, PanelKey, PanelLine, PanelOutcome,
-    Preview, ShellRole, ShellSpan, Token, TokenKind,
+    PasteReview, Preview, ShellRole, ShellSpan, Token, TokenKind,
 };
 pub(crate) use caret_layout::{
     Axis, Chrome, CloseOutcome, Direction, Divider, Dock, DockKind, Frame, LayoutPreset,
@@ -47,6 +47,7 @@ pub(crate) use crate::types::mouse_event::*;
 pub(crate) use crate::types::palette::*;
 pub(crate) use crate::types::palette_item::*;
 pub(crate) use crate::types::pane::*;
+pub(crate) use crate::types::pending_paste::*;
 pub(crate) use crate::types::raw_mode::*;
 pub(crate) use crate::types::rearrange::*;
 pub(crate) use crate::types::search_state::*;

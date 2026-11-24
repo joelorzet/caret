@@ -110,6 +110,15 @@ impl Config {
             set(&mut self.terminal.confirm_close, t.confirm_close);
             set(&mut self.terminal.highlight_input, t.highlight_input);
             set(&mut self.terminal.clipboard_write, t.clipboard_write);
+            if let Some(name) = t.confirm_paste {
+                match PasteConfirm::parse(&name) {
+                    Some(when) => self.terminal.confirm_paste = when,
+                    None => warn.push(format!(
+                        "terminal.confirm_paste {name:?} is not one of {}",
+                        PasteConfirm::accepted().join(", ")
+                    )),
+                }
+            }
             set(&mut self.terminal.mouse, t.mouse);
         }
 

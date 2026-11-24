@@ -8,6 +8,7 @@ pub mod mouse;
 pub mod mouse_input;
 pub mod palette;
 pub mod pane;
+pub mod paste;
 pub mod preview;
 pub mod raw_mode;
 pub mod rearrange;

@@ -70,6 +70,7 @@ pub(crate) struct RawTerminal {
     pub confirm_close: Option<bool>,
     pub highlight_input: Option<bool>,
     pub clipboard_write: Option<bool>,
+    pub confirm_paste: Option<String>,
     pub mouse: Option<bool>,
 }
 

@@ -4,6 +4,7 @@ pub mod entry;
 pub mod explorer;
 pub mod highlight_state;
 pub mod panel_line;
+pub mod paste_review;
 pub mod preview;
 pub mod shell_span;
 pub mod syntax;

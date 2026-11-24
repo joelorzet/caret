@@ -21,6 +21,8 @@ pub struct TerminalConfig {
     /// Whether a program running in a pane may put text on the clipboard.
     /// Reading it is never allowed, with or without this.
     pub clipboard_write: bool,
+    /// When a paste is shown before it is sent.
+    pub confirm_paste: PasteConfirm,
     /// Report mouse events. Turning this off gives the surrounding terminal
     /// its own selection back when running in host mode.
     pub mouse: bool,

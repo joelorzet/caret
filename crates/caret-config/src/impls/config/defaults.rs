@@ -48,6 +48,7 @@ impl Default for TerminalConfig {
             confirm_close: true,
             highlight_input: true,
             clipboard_write: true,
+            confirm_paste: PasteConfirm::default(),
             mouse: true,
         }
     }

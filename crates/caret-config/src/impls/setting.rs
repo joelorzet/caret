@@ -167,6 +167,12 @@ impl Config {
             ),
             row(
                 "terminal",
+                "confirm_paste",
+                t.confirm_paste.name().to_string(),
+                "show a paste before sending it",
+            ),
+            row(
+                "terminal",
                 "mouse",
                 t.mouse.to_string(),
                 "report mouse events to programs",
