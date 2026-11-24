@@ -174,5 +174,9 @@ git tag -a v0.1.0 -m "caret 0.1.0"
 git push origin v0.1.0
 ```
 
-The tag runs the full suite, then builds the macOS disk images and the Linux
+The tag runs the full suite, then builds the macOS disk image and the Linux
 tarball and publishes them with their checksums.
+
+A tag that has published is never moved: the download exists and somebody
+may have it. If a release fails before publishing, fix it and cut the next
+patch version. CI refuses to publish over a tag that already has a release.
