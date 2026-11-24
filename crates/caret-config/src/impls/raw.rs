@@ -71,6 +71,8 @@ pub(crate) struct RawTerminal {
     pub highlight_input: Option<bool>,
     pub clipboard_write: Option<bool>,
     pub confirm_paste: Option<String>,
+    pub notify_finish: Option<String>,
+    pub notify_after: Option<u32>,
     pub mouse: Option<bool>,
 }
 

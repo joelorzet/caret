@@ -15,6 +15,7 @@ pub use crate::enums::action::*;
 pub use crate::enums::action_group::*;
 pub use crate::enums::bell_style::*;
 pub use crate::enums::cursor_fill::CursorFill;
+pub use crate::enums::finish_notice::*;
 pub use crate::enums::key::*;
 pub use crate::enums::key_resolution::*;
 pub use crate::enums::paste_confirm::*;

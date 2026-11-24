@@ -251,6 +251,20 @@ caret reads the standard marks and asks for nothing: a shell that sends
 none behaves exactly as before. Most shell integrations emit them already;
 in zsh, a `precmd` that prints `\e]133;A\a` is enough to get the jumps.
 
+### Being told when a long command finishes
+
+A build you started in another pane and then stopped watching finishes
+quietly, and you find out about it whenever you next look. When a command
+takes longer than `notify_after` seconds, caret says so: in the status line
+if you are watching that pane, and as a desktop notification if you are
+not, naming the pane, the exit status and how long it took. Switching panes
+or away from the window is what decides which one you get, so a command you
+sat and watched never raises a notification.
+
+`notify_finish` under `[terminal]` takes `status` to keep it in the status
+line always, `system` to allow the desktop notification, or `off`. It needs
+the same prompt marks the jumps use.
+
 ### Links you can open
 
 A URL in output, or a file path that exists, is something to click: hold
@@ -300,6 +314,8 @@ scrollback = 10000
 cursor = "block"           # block | underline | bar | hollow
 confirm_close = true       # ask before closing a pane with a job running
 highlight_input = true     # colour the command line as you type it
+notify_finish = "system"   # off | status | system
+notify_after = 30          # seconds before a command is worth reporting
 
 [sidebar.agent]
 command = "claude"         # any program on PATH

@@ -58,6 +58,10 @@ clipboard_write = true
 # Pasting runs what you pasted, so a paste carrying a line break, a control
 # character or a great deal of text is shown first.
 confirm_paste = "notable"  # always | notable | never
+# A long command finishing in a pane you are not watching is worth saying.
+# `system` also raises a notification when the window is not focused.
+notify_finish = "status"   # off | status | system
+notify_after = 30          # seconds, below which a finish says nothing
 mouse = true           # click to focus, wheel to scroll, and report to apps
 
 [chrome]

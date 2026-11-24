@@ -10,6 +10,9 @@ const MIN_ROWS: u16 = 5;
 const MIN_CHECK_HOURS: u32 = 1;
 const MAX_CHECK_HOURS: u32 = 720;
 
+/// A day is as good as never for a command somebody is waiting on.
+const MAX_NOTIFY_AFTER: u32 = 86_400;
+
 impl Config {
     /// Whether this configuration wants caret to look for a newer release.
     pub fn check_updates(&self) -> bool {
@@ -110,6 +113,18 @@ impl Config {
             set(&mut self.terminal.confirm_close, t.confirm_close);
             set(&mut self.terminal.highlight_input, t.highlight_input);
             set(&mut self.terminal.clipboard_write, t.clipboard_write);
+            if let Some(name) = t.notify_finish {
+                match FinishNotice::parse(&name) {
+                    Some(how) => self.terminal.notify_finish = how,
+                    None => warn.push(format!(
+                        "terminal.notify_finish {name:?} is not one of {}",
+                        FinishNotice::accepted().join(", ")
+                    )),
+                }
+            }
+            if let Some(seconds) = t.notify_after {
+                self.terminal.notify_after = seconds.min(MAX_NOTIFY_AFTER);
+            }
             if let Some(name) = t.confirm_paste {
                 match PasteConfirm::parse(&name) {
                     Some(when) => self.terminal.confirm_paste = when,

@@ -23,6 +23,10 @@ pub struct TerminalConfig {
     pub clipboard_write: bool,
     /// When a paste is shown before it is sent.
     pub confirm_paste: PasteConfirm,
+    /// How far the news of a finished command travels.
+    pub notify_finish: FinishNotice,
+    /// Seconds a command must have run for its finish to be worth saying.
+    pub notify_after: u32,
     /// Report mouse events. Turning this off gives the surrounding terminal
     /// its own selection back when running in host mode.
     pub mouse: bool,

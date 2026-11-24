@@ -67,6 +67,7 @@ impl Session {
             input_anchor: None,
             pending_record: None,
             native_window: false,
+            window_focused: true,
             layout_cycle: 0,
             size,
             prefix_pending: false,
@@ -606,6 +607,10 @@ impl Session {
     /// being asked for over OSC 52.
     pub fn set_native_window(&mut self, native: bool) {
         self.native_window = native;
+    }
+
+    pub fn set_window_focused(&mut self, focused: bool) {
+        self.window_focused = focused;
     }
 
     /// A short name for the window title.

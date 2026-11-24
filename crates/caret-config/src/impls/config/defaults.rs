@@ -49,6 +49,8 @@ impl Default for TerminalConfig {
             highlight_input: true,
             clipboard_write: true,
             confirm_paste: PasteConfirm::default(),
+            notify_finish: FinishNotice::default(),
+            notify_after: 30,
             mouse: true,
         }
     }
