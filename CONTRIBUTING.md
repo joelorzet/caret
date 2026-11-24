@@ -111,10 +111,42 @@ Idle cost is a feature here: a pane doing nothing costs 0.15% of a core, and
 [docs/limitations.md](docs/limitations.md) records what a frame actually costs
 and why.
 
+## Branches and commits
+
+Never commit to `main`. Branch as `<kind>/<subject>`, lower case with
+hyphens:
+
+```
+feat/update-check     fix/fullscreen-resize
+ref/split-session     hotfix/release-tag
+```
+
+The kinds are `feat`, `fix`, `ref`, `hotfix`, `docs`, `ci`, `chore`,
+`test`, `perf`, and for commits also `build` and `revert`.
+
+Commit messages are [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+fix(core): keep written rows when a pane grows
+
+Every resize pads the buffer out to the new height, and that padding was
+counted as content, so the next time the window grew it was revealed as
+scrollback. Rows below the cursor that hold nothing are now trimmed.
+```
+
+A subject is imperative, lower case after the kind, has no full stop and
+fits in 72 characters. A body says why, wrapped at 72 columns. A breaking
+change takes `!` after the kind or a `BREAKING CHANGE:` footer.
+
+One subject per commit. Amend or rebase your own unpushed work rather than
+adding "wip" and "fix typo" on top of it. Merging is a squash, so the
+title of the pull request is the subject that lands on main and is held to
+the same rule. CI checks all of this, and `scripts/check-subject.sh` is
+the same check you can run by hand.
+
 ## Pull requests
 
-- Branch off main. Keep a pull request to one subject; two subjects are two
-  pull requests.
+- Keep a pull request to one subject; two subjects are two pull requests.
 - Say what the change does and why, and what you measured if it is about speed
   or memory. A failing test before and a passing one after is the best
   argument there is.
