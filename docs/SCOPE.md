@@ -96,7 +96,6 @@ ordinary pane running `claude`, so it costs one child process.
 
 - **Ligature shaping**: one glyph per cell, so `!=` stays two glyphs.
 - **GPU rendering**: the window rasterises and blends on the CPU.
-- **Reflow on resize**: columns truncate instead of rewrapping.
 - **Combining characters, DCS sequences, character sets**: see
   [limitations.md](limitations.md).
 - **Windows**: needs ConPTY; see [platforms.md](platforms.md).

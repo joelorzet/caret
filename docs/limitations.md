@@ -12,12 +12,6 @@ on every cell, which is the one thing `caret-core` is built to avoid. Precompose
 characters work; decomposed ones lose the mark.
 *`caret-core/src/impls/screen/printing.rs`*
 
-**No reflow on resize.** Narrowing the window truncates each row instead of
-rewrapping it, and widening does not rejoin rows that had wrapped. The wrap
-markers needed to do it properly are already tracked (`RowMeta::WRAPPED`), so
-this is unfinished rather than impossible.
-*`caret-core/src/impls/screen/resize.rs`*
-
 ## Panes
 
 **Linux drops what a program wrote as it exited.** A pty is drained before

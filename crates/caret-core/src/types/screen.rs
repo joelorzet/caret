@@ -33,6 +33,10 @@ pub struct Screen {
     pub(crate) pen: Cell,
     pub(crate) region: ScrollRegion,
 
+    /// Whether a resize may lay the content out again. The alternate
+    /// screen belongs to a program that redraws itself, and rewrapping what
+    /// it drew would only scramble it.
+    pub(crate) reflow: bool,
     pub(crate) all_dirty: bool,
     pub(crate) scratch: Vec<u32>,
 }

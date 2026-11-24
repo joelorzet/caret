@@ -5,7 +5,7 @@ impl Terminal {
     pub fn new(cols: u16, rows: u16, scrollback: u32) -> Terminal {
         Terminal {
             primary: Screen::new(cols, rows, scrollback),
-            alt: Screen::new(cols, rows, 0),
+            alt: Screen::alternate(cols, rows),
             on_alt: false,
             modes: Modes::default(),
             tabs: TabStops::new(cols),

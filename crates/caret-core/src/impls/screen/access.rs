@@ -81,6 +81,12 @@ impl Screen {
         self.vp_base() - self.scroll_offset.min(self.history_len())
     }
 
+    /// Whether a stored row continues onto the next one, by its place in
+    /// the whole buffer rather than on the screen.
+    pub fn wrapped_row(&self, l: u32) -> bool {
+        self.meta[self.slot(l.min(self.len.saturating_sub(1)))].is_wrapped()
+    }
+
     pub fn is_wrapped(&self, y: u16) -> bool {
         let l = self.vp_base() + y.min(self.rows - 1) as u32;
         self.meta[self.slot(l)].is_wrapped()
