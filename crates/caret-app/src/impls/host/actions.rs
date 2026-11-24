@@ -174,6 +174,10 @@ impl Session {
                 self.message = " looking for a newer release...".into();
                 self.begin_update_check(true);
             }
+            Action::InstallUpdate => {
+                self.message = " fetching the newer release...".into();
+                self.begin_update_install();
+            }
             Action::Quit => self.running = false,
         }
         Ok(())

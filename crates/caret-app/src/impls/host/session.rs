@@ -74,6 +74,7 @@ impl Session {
             palette: None,
             rearrange: None,
             update_check: None,
+            update_install: None,
             message: String::new(),
             message_shown: String::new(),
             message_until: None,
@@ -197,7 +198,7 @@ impl Session {
             program,
             args,
             cwd,
-            env: Vec::new(),
+            env: pane_env(),
             cols,
             rows,
         };
@@ -657,6 +658,7 @@ impl Session {
     pub fn pump(&mut self, timeout_ms: i32) -> std::io::Result<bool> {
         self.age_message();
         self.settle_update_check();
+        self.settle_update_install();
         self.settle_pty_sizes();
         let mut events = Vec::new();
         let mut ready = Vec::new();
@@ -1221,4 +1223,34 @@ pub fn assign_pane_numbers(slots: &mut Vec<Option<PaneId>>, live: &[PaneId]) {
     while slots.last() == Some(&None) {
         slots.pop();
     }
+}
+
+/// What a pane starts with on top of what caret itself has.
+///
+/// The running binary's own directory goes on PATH, so `caret` means the
+/// caret you are sitting in. Without it the terminal can tell you to run
+/// `caret update` and be wrong: an app bundle puts nothing on PATH.
+fn pane_env() -> Vec<(String, String)> {
+    let Ok(exe) = std::env::current_exe() else {
+        return Vec::new();
+    };
+    let Some(dir) = exe.parent() else {
+        return Vec::new();
+    };
+    let path = std::env::var("PATH").unwrap_or_default();
+    match path_with(&path, dir) {
+        Some(joined) => vec![("PATH".to_string(), joined)],
+        None => Vec::new(),
+    }
+}
+
+/// `dir` in front of `path`, or nothing if it is already there.
+pub fn path_with(path: &str, dir: &std::path::Path) -> Option<String> {
+    if std::env::split_paths(path).any(|entry| entry == dir) {
+        return None;
+    }
+    let joined =
+        std::env::join_paths(std::iter::once(dir.to_path_buf()).chain(std::env::split_paths(path)))
+            .ok()?;
+    joined.into_string().ok()
 }
