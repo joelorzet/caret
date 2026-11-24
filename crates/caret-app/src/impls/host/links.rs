@@ -56,32 +56,24 @@ impl Session {
         Some((start, end, target))
     }
 
-    /// What a marked target means, or nothing when it is not ours to open.
+    /// What a marked target means here, or nothing when it is not ours to
+    /// open.
     ///
     /// A `file://` target is handed to the editor rather than the desktop,
     /// which is what a build tool marking a source file wants, and it has to
     /// be a file that is there for the same reason a guessed path does.
     fn target_from(&self, id: PaneId, target: &str) -> Option<LinkTarget> {
-        if let Some(rest) = target.strip_prefix("file://") {
-            // The host comes before the path. Only this machine's files are
-            // ours to open: another machine's path may well exist here too,
-            // and would be a different file.
-            let (host, path) = rest.split_once('/')?;
-            if !host.is_empty() && !host.eq_ignore_ascii_case("localhost") {
-                return None;
+        match marked_target(target)? {
+            MarkedLink::Url(url) => Some(LinkTarget::Url(url)),
+            MarkedLink::Path(path) => {
+                self.resolve(id, &path)?;
+                Some(LinkTarget::File {
+                    path,
+                    line: None,
+                    column: None,
+                })
             }
-            let path = percent_decoded(&format!("/{path}"));
-            self.resolve(id, &path)?;
-            return Some(LinkTarget::File {
-                path,
-                line: None,
-                column: None,
-            });
         }
-        let known = OPENABLE
-            .iter()
-            .any(|scheme| target.len() > scheme.len() && starts_with_ignoring_case(target, scheme));
-        known.then(|| LinkTarget::Url(target.to_owned()))
     }
 
     /// Where a path in a pane's output actually is: beside the pane's
@@ -148,8 +140,33 @@ impl Session {
     }
 }
 
-fn starts_with_ignoring_case(text: &str, prefix: &str) -> bool {
-    text.len() >= prefix.len() && text[..prefix.len()].eq_ignore_ascii_case(prefix)
+/// What caret will make of the target a program marked, before asking the
+/// filesystem anything.
+///
+/// The text that was marked can say whatever the program likes, so the
+/// target is read rather than trusted: a scheme nobody here recognises
+/// belongs to somebody else's idea of what a terminal should run, and a
+/// `file://` target on another machine names a file this one does not have,
+/// however well the path matches.
+pub fn marked_target(target: &str) -> Option<MarkedLink> {
+    if let Some(rest) = strip_prefix_ignoring_case(target, "file://") {
+        let (host, path) = rest.split_once('/')?;
+        if !host.is_empty() && !host.eq_ignore_ascii_case("localhost") {
+            return None;
+        }
+        let path = percent_decoded(&format!("/{path}"));
+        return (!path.is_empty()).then_some(MarkedLink::Path(path));
+    }
+    let known = OPENABLE.iter().any(|scheme| {
+        target.len() > scheme.len() && strip_prefix_ignoring_case(target, scheme).is_some()
+    });
+    known.then(|| MarkedLink::Url(target.to_owned()))
+}
+
+fn strip_prefix_ignoring_case<'a>(text: &'a str, prefix: &str) -> Option<&'a str> {
+    let head = text.get(..prefix.len())?;
+    head.eq_ignore_ascii_case(prefix)
+        .then(|| &text[prefix.len()..])
 }
 
 /// A `file://` path as the filesystem spells it.
