@@ -693,6 +693,11 @@ impl Session {
         self.quitting
     }
 
+    /// What the status line is currently saying, if anything.
+    pub fn status_message(&self) -> &str {
+        &self.message
+    }
+
     /// Where the focused pane is, which is where another window or another
     /// split would start.
     pub fn working_dir(&self) -> Option<std::path::PathBuf> {

@@ -19,6 +19,7 @@ fn press(spec: &str) -> caret_config::KeyBinding {
 #[test]
 fn a_window_is_asked_for_once_and_then_the_request_is_gone() {
     let mut session = session();
+    session.set_native_window(true);
     assert!(!session.took_window_request(), "nothing asked for yet");
 
     let _ = session.handle_key(caret_app::types::key_press::KeyPress {
@@ -36,6 +37,26 @@ fn a_window_is_asked_for_once_and_then_the_request_is_gone() {
         "asking for a window changes nothing else"
     );
     assert!(!session.is_quitting());
+}
+
+// Drawing inside another terminal there is nothing to open, and the key
+// has to account for itself rather than appearing broken.
+#[test]
+fn asking_for_a_window_from_inside_another_terminal_says_why_not() {
+    let mut session = session();
+    session.set_native_window(false);
+
+    let _ = session.handle_key(caret_app::types::key_press::KeyPress {
+        binding: press("cmd+n"),
+        bytes: Vec::new(),
+    });
+
+    assert!(!session.took_window_request(), "no window was asked for");
+    assert!(
+        session.status_message().contains("caret run"),
+        "it says where windows come from: {:?}",
+        session.status_message()
+    );
 }
 
 // Two different endings: one closes a window, the other ends the program.

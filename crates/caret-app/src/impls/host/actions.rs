@@ -93,9 +93,14 @@ impl Session {
                 self.apply_layout(&template)?;
             }
 
-            // Windows belong to the window layer, which looks for this
-            // on its way round the loop.
-            Action::NewWindow => self.wants_window = true,
+            // Windows belong to the window layer, which looks for this on
+            // its way round the loop. Drawing inside another terminal
+            // there is no window to make, and a key that quietly does
+            // nothing is worse than one that says so.
+            Action::NewWindow => match self.native_window {
+                true => self.wants_window = true,
+                false => self.message = " windows need `caret run`".into(),
+            },
 
             Action::RenameTab => self.open_rename(),
             Action::NewTab => {
