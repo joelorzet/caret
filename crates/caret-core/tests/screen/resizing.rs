@@ -54,3 +54,37 @@ fn resize_resets_the_scroll_region() {
     s.resize(8, 10);
     assert_eq!((s.region().top, s.region().bottom), (0, 9));
 }
+
+// Going full screen with a pane that has written one line should leave that
+// line at the top. It did not: every resize pads the buffer out to the new
+// height, and the next time the window grew that padding was treated as
+// history and revealed above the cursor, leaving the prompt stranded in the
+// middle of the pane with blank rows over it.
+#[test]
+fn growing_after_a_shrink_does_not_reveal_the_padding_as_history() {
+    let mut s = Screen::new(40, 24, 1_000);
+    write(&mut s, "prompt>");
+    assert_eq!(s.cursor().y, 0);
+
+    // A window the user made smaller, then full screen.
+    s.resize(40, 10);
+    s.resize(40, 40);
+
+    assert_eq!(s.history_len(), 0, "nothing was ever scrolled off");
+    assert_eq!(s.cursor().y, 0, "the line it wrote is still the top line");
+    assert_eq!(s.row_text(0), "prompt>");
+}
+
+// The same thing with a few lines of real output above the cursor: they stay
+// put, and no blank room appears over them.
+#[test]
+fn growing_keeps_written_lines_against_the_top() {
+    let mut s = Screen::new(40, 24, 1_000);
+    write(&mut s, "one\r\ntwo\r\nthree");
+    s.resize(40, 8);
+    s.resize(40, 30);
+
+    assert_eq!(s.history_len(), 0);
+    assert_eq!(s.cursor().y, 2);
+    assert_eq!(viewport(&s)[..3], ["one", "two", "three"]);
+}
