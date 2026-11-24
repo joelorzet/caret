@@ -1,9 +1,6 @@
 //! Whether a newer caret has been released.
 //!
-//! The work is split so that all of it except the network call is a pure
-//! function over strings: comparing two versions, reading a tag out of a
-//! redirect, deciding whether a check is due, and keeping the little file
-//! that remembers when the last one was. The call itself is one process.
+//! Everything but the request itself is a pure function over strings.
 
 mod enums;
 mod impls;

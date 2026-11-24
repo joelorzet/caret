@@ -1,7 +1,6 @@
 #[allow(unused_imports)]
 use crate::prelude::*;
 
-/// A release on the other end of the network.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Release {
     pub version: Version,

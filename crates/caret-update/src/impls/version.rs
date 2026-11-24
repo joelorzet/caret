@@ -4,10 +4,7 @@ use crate::prelude::*;
 use std::cmp::Ordering;
 
 impl Version {
-    /// Reads `0.1.1`, `v0.1.1` or `0.2.0-rc1`.
-    ///
-    /// Anything that is not three numbers is not a version this understands,
-    /// and saying so is better than guessing at it.
+    /// Reads `0.1.1`, `v0.1.1` or `0.2.0-rc1`, and nothing else.
     pub fn parse(text: &str) -> Option<Version> {
         let text = text.trim().trim_start_matches('v');
         let (numbers, pre) = match text.split_once(['-', '+']) {
@@ -32,7 +29,6 @@ impl Version {
         })
     }
 
-    /// Whether `self` comes after `other`.
     pub fn is_newer_than(&self, other: &Version) -> bool {
         self.cmp(other) == Ordering::Greater
     }
@@ -52,9 +48,8 @@ impl Ord for Version {
     fn cmp(&self, other: &Version) -> Ordering {
         (self.major, self.minor, self.patch)
             .cmp(&(other.major, other.minor, other.patch))
-            // A release candidate comes before the release it is for, so an
-            // empty suffix wins; between two suffixes, alphabetical is as
-            // good an order as any and at least it is stable.
+            // A candidate comes before the release it is for, so no suffix
+            // wins; between two suffixes, alphabetical at least is stable.
             .then_with(|| match (self.pre.is_empty(), other.pre.is_empty()) {
                 (true, true) => Ordering::Equal,
                 (true, false) => Ordering::Greater,
