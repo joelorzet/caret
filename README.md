@@ -239,6 +239,15 @@ shell, so lines using those read as unrecognised. Turn it off with
 As you type, the most recent matching command from your history is offered as
 ghost text; right accepts it, and down and up choose between matches.
 
+### Links you can open
+
+A URL in output, or a file path that exists, is something to click: hold
+`cmd` (`ctrl` elsewhere) and the link under the pointer underlines itself.
+A URL opens in your browser; a file opens in `$EDITOR`, at the line and
+column if the text gives them, which is what a compiler error does. A plain
+click still places the cursor and selects, and a word that merely looks
+like a path is left alone.
+
 ### Mouse and clipboard
 
 Click focuses a pane or a tab, drag selects, double click takes a word, triple

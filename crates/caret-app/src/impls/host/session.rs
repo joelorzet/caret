@@ -57,6 +57,7 @@ impl Session {
             search: None,
             renaming: None,
             pending_paste: None,
+            hover_link: None,
             preview: None,
             autocomplete: Autocomplete::new(
                 Session::history_path()

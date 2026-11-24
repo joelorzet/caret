@@ -12,6 +12,7 @@ pub(crate) use crate::types::command_index::*;
 pub(crate) use crate::types::entry::*;
 pub(crate) use crate::types::explorer::*;
 pub(crate) use crate::types::highlight_state::*;
+pub(crate) use crate::types::link::*;
 pub(crate) use crate::types::panel_line::*;
 pub(crate) use crate::types::paste_review::*;
 pub(crate) use crate::types::preview::*;

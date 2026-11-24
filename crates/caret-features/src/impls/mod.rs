@@ -5,6 +5,7 @@ pub mod explorer;
 pub mod highlight_state;
 pub mod history;
 pub mod language;
+pub mod link;
 pub mod paste_review;
 pub mod preview;
 pub mod shell_line;
