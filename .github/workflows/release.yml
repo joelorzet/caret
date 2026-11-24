@@ -62,7 +62,12 @@ jobs:
   macos:
     name: macOS universal
     needs: [verify, version]
-    runs-on: macos-latest
+    # macos-latest resolves to macos-26-arm64, the newest image, and that
+    # pool refused a machine on three of seven jobs in one afternoon:
+    # queued fifteen minutes, then cancelled with no runner and no steps.
+    # An image a generation older has more machines behind it, and the
+    # binary it produces is the same.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
 

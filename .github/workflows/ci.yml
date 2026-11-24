@@ -48,7 +48,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # See the note in release.yml: macos-latest is the newest image
+        # and the least likely to be handed out.
+        os: [ubuntu-latest, macos-15]
     steps:
       - uses: actions/checkout@v5
 
