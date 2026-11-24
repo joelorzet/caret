@@ -47,11 +47,15 @@ impl Session {
                 if self.hovers_link(id, logical, x) {
                     flags = flags.union(Flags::UNDERLINE);
                 }
+                let ch = match screen.grapheme(&cell) {
+                    Grapheme::One(ch) => ch,
+                    Grapheme::Many(text) => surface.hold(text),
+                };
                 surface.set(
                     rect.x + x,
                     rect.y + y,
                     SurfaceCell {
-                        ch: cell.ch,
+                        ch,
                         fg,
                         bg,
                         flags,

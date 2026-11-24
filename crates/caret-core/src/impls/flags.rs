@@ -16,6 +16,10 @@ impl Flags {
     pub const WIDE_TAIL: Flags = Flags(1 << 9);
     pub const UNDERLINE_DOUBLE: Flags = Flags(1 << 10);
     pub const UNDERLINE_CURLY: Flags = Flags(1 << 11);
+    /// This cell's `char` is a handle into the screen's cluster table
+    /// rather than the character to draw. Positional, like the wide-char
+    /// markers, so it is not copied from the pen.
+    pub const CLUSTER: Flags = Flags(1 << 12);
 
     /// Flags copied from the pen onto printed cells. Excludes the wide-char
     /// markers, which are positional rather than part of the SGR state.
@@ -87,7 +91,7 @@ impl core::ops::BitOrAssign for Flags {
 
 impl core::fmt::Debug for Flags {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        const NAMES: [(Flags, &str); 12] = [
+        const NAMES: [(Flags, &str); 13] = [
             (Flags::BOLD, "BOLD"),
             (Flags::DIM, "DIM"),
             (Flags::ITALIC, "ITALIC"),
@@ -100,6 +104,7 @@ impl core::fmt::Debug for Flags {
             (Flags::WIDE_TAIL, "WIDE_TAIL"),
             (Flags::UNDERLINE_DOUBLE, "UNDERLINE_DOUBLE"),
             (Flags::UNDERLINE_CURLY, "UNDERLINE_CURLY"),
+            (Flags::CLUSTER, "CLUSTER"),
         ];
         if self.is_empty() {
             return f.write_str("NONE");

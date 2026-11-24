@@ -4,6 +4,22 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## Unreleased
+
+### Added
+
+- **A letter and its accents are one cell.** A mark arriving after the
+  letter it belongs to was dropped, so text that was typed or printed
+  decomposed read wrongly and everything after it sat in the wrong column.
+  A mark with a precomposed form now becomes that single character, which
+  costs nothing to store, draws with a glyph fonts already have, and is what
+  a search for the word matches. Anything else shares the cell of the
+  character it combines with: several marks, an emoji with a skin tone, two
+  emoji joined into one, a flag, a variation selector. Selecting such a cell
+  copies everything it shows. A cell that needs none of this is not a byte
+  bigger, because the text lives beside the grid and only the rare cell
+  points at it.
+
 ## 0.2.0
 
 ### Added

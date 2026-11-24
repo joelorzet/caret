@@ -5,8 +5,8 @@ pub(crate) use caret_config::{
     ThemeRegistry,
 };
 pub(crate) use caret_core::{
-    Cell, Color, ColorKind, Cursor, CursorShape, CursorStyle, Flags, Modes, Point, Rgb, Screen,
-    Selection, SelectionMode, Terminal, TerminalEvent,
+    cluster_handle, cluster_index, Cell, Color, ColorKind, Cursor, CursorShape, CursorStyle, Flags,
+    Grapheme, Modes, Point, Rgb, Screen, Selection, SelectionMode, Terminal, TerminalEvent,
 };
 pub(crate) use caret_features::{
     shell_spans, Autocomplete, CommandIndex, Explorer, LineKind, PanelKey, PanelLine, PanelOutcome,

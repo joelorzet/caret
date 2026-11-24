@@ -29,6 +29,7 @@ impl Screen {
             len: rows as u32,
             dropped: 0,
             prompts: Vec::new(),
+            clusters: ClusterTable::new(),
             links: LinkTable::new(),
             scroll_offset: 0,
             scrollback_limit: scrollback,
@@ -92,6 +93,7 @@ impl Screen {
             + core::mem::size_of_val(&*self.slots)
             + self.scratch.capacity() * 4
             + self.links.bytes()
+            + self.clusters.bytes()
     }
 
     pub fn reset(&mut self) {
@@ -110,10 +112,17 @@ impl Screen {
             .iter()
             .rposition(|c| !c.is_blank() || c.bg != Color::DEFAULT)
             .map_or(0, |i| i + 1);
-        row[..end]
+        let mut out = String::with_capacity(end);
+        for cell in row[..end]
             .iter()
             .filter(|c| !c.flags.contains(Flags::WIDE_TAIL))
-            .map(|c| if c.ch == '\0' { ' ' } else { c.ch })
-            .collect()
+        {
+            match self.grapheme(cell) {
+                Grapheme::One('\0') => out.push(' '),
+                Grapheme::One(ch) => out.push(ch),
+                Grapheme::Many(text) => out.push_str(text),
+            }
+        }
+        out
     }
 }

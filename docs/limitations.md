@@ -5,12 +5,27 @@ decision rather than a surprise.
 
 ## Grid
 
-**No combining characters.** A cell holds one `char`. Zero-width marks (an
-accent arriving after its base letter) are dropped rather than composed.
-Storing a grapheme cluster per cell would mean a side table and an indirection
-on every cell, which is the one thing `caret-core` is built to avoid. Precomposed
-characters work; decomposed ones lose the mark.
-*`caret-core/src/impls/screen/printing.rs`*
+**A cluster is drawn by stacking its characters, not by shaping them.** A
+letter and its marks share a cell, and the window draws the base glyph and
+then each mark at the same origin. A combining glyph advances by nothing and
+is designed to sit over what precedes it, so this is right for marks; a
+script that needs its letters reshaped by their neighbours is not drawn the
+way it should be, and an emoji built out of several characters shows its base
+rather than the single glyph a shaping engine would pick.
+*`caret-app/src/impls/window/paint.rs`*
+
+**A pane holds the text of 32,768 clusters at once.** Cells that need more
+than one character point at a table beside the grid, which is compacted
+against the grid before it is allowed to fill, so the limit is reached only
+when that many different clusters are genuinely on screen or in scrollback.
+Past it a cell keeps its base character and loses what combined with it.
+*`caret-core/src/impls/cluster_table.rs`*
+
+**A search matches a cluster by the character it is built on.** An accent
+that has a precomposed form becomes that single character as it arrives, so
+searching for the word finds it; a cluster with no precomposed form is found
+by its base letter rather than by the marks on it.
+*`caret-core/src/impls/screen/search.rs`*
 
 ## Panes
 

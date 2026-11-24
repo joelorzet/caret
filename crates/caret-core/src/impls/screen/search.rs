@@ -58,7 +58,11 @@ impl Screen {
             if cell.flags.contains(Flags::WIDE_TAIL) {
                 continue;
             }
-            let ch = if cell.ch == '\0' { ' ' } else { cell.ch };
+            // A cell holding a cluster is matched by the character it is
+            // built on: what combines with it is the accent, and a search
+            // for the letter should find the letter.
+            let base = self.grapheme(cell).base();
+            let ch = if base == '\0' { ' ' } else { base };
             let ch = if case_sensitive {
                 ch
             } else {

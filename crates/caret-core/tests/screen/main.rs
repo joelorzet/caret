@@ -1,3 +1,4 @@
+mod clusters;
 #[path = "../common/mod.rs"]
 mod common;
 mod cursor;
