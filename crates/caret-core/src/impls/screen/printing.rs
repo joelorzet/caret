@@ -41,12 +41,14 @@ impl Screen {
                 fg: pen.fg,
                 bg: pen.bg,
                 flags: pen.flags.intersection(Flags::SGR_MASK),
+                link: pen.link,
             };
             if width == 2 {
                 row[x as usize].flags |= Flags::WIDE;
                 if (x + 1) < cols {
                     row[x as usize + 1] =
                         Cell::wide_tail(pen.fg, pen.bg, pen.flags.intersection(Flags::SGR_MASK));
+                    row[x as usize + 1].link = pen.link;
                 }
             }
         }

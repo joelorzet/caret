@@ -10,6 +10,8 @@ pub(crate) use crate::types::color::*;
 pub(crate) use crate::types::cursor::*;
 pub(crate) use crate::types::cursor_style::*;
 pub(crate) use crate::types::flags::*;
+pub(crate) use crate::types::link_id::*;
+pub(crate) use crate::types::link_table::*;
 pub(crate) use crate::types::modes::*;
 pub(crate) use crate::types::point::*;
 pub(crate) use crate::types::rgb::*;

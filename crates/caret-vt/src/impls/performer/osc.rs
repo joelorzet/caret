@@ -7,6 +7,7 @@ mod code {
     pub const ICON: &[u8] = b"1";
     pub const TITLE: &[u8] = b"2";
     pub const WORKING_DIRECTORY: &[u8] = b"7";
+    pub const HYPERLINK: &[u8] = b"8";
     pub const SHELL_INTEGRATION: &[u8] = b"133";
     pub const CLIPBOARD: &[u8] = b"52";
 }
@@ -48,6 +49,24 @@ impl Performer<'_> {
                     }
                 }
             }
+            // A program saying that what it prints next is a link, with a
+            // target that need not be the text at all. `OSC 8 ; params ;
+            // target`, and an empty target closes the link again. The
+            // params carry an optional id for stitching a link split across
+            // lines, which nothing here needs: the cells carry the target.
+            code::HYPERLINK => {
+                // The target may contain semicolons of its own, and those
+                // arrived split.
+                let target = params.get(2..).unwrap_or_default().join(&b';');
+                match target.is_empty() {
+                    true => self.term.screen_mut().close_link(),
+                    false => self
+                        .term
+                        .screen_mut()
+                        .open_link(&String::from_utf8_lossy(&target)),
+                }
+            }
+
             // Shell integration marks; the prompt boundary is the useful one.
             code::SHELL_INTEGRATION => match params.get(1).copied() {
                 Some(mark::PROMPT_START) => {

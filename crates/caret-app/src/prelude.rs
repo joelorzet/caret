@@ -24,6 +24,7 @@ pub(crate) use caret_vt::Parser;
 pub(crate) use crate::enums::drag_target::*;
 pub(crate) use crate::enums::focus_target::*;
 pub(crate) use crate::enums::input_event::*;
+pub(crate) use crate::enums::marked_link::*;
 pub(crate) use crate::enums::mouse_button::*;
 pub(crate) use crate::enums::mouse_kind::*;
 pub(crate) use crate::enums::palette_kind::*;

@@ -2,6 +2,7 @@ pub mod access;
 pub mod damage;
 pub mod editing;
 pub mod lifecycle;
+pub mod links;
 pub mod marks;
 pub mod motion;
 pub mod pen;

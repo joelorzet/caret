@@ -7,6 +7,7 @@ impl Cell {
         fg: Color::DEFAULT,
         bg: Color::DEFAULT,
         flags: Flags::NONE,
+        link: LinkId::NONE,
     };
 
     pub const fn blank(bg: Color) -> Cell {
@@ -15,6 +16,7 @@ impl Cell {
             fg: Color::DEFAULT,
             bg,
             flags: Flags::NONE,
+            link: LinkId::NONE,
         }
     }
 
@@ -38,6 +40,7 @@ impl Cell {
             fg,
             bg,
             flags: flags.union(Flags::WIDE_TAIL),
+            link: LinkId::NONE,
         }
     }
 }

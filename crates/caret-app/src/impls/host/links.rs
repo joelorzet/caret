@@ -15,10 +15,19 @@ pub fn opens_links(mods: Modifiers) -> bool {
     }
 }
 
+/// The schemes caret is willing to hand to the desktop.
+///
+/// A marked link's target is whatever the program said, and the text it
+/// marked can claim to be anything, so the target is checked rather than
+/// trusted: a scheme nobody recognises is somebody else's idea.
+const OPENABLE: [&str; 3] = ["https://", "http://", "mailto:"];
+
 impl Session {
     /// The link under a point in a pane, if there is one worth opening.
     ///
-    /// A path is a link only if it is there: output is full of words with
+    /// A program that marked the text is believed over anything caret can
+    /// work out for itself, because it knows what the text means. Otherwise
+    /// a path is a link only if it is there: output is full of words with
     /// slashes in them, and offering to open something that does not exist
     /// is worse than offering nothing.
     pub(crate) fn link_under(
@@ -27,6 +36,9 @@ impl Session {
         point: Point,
     ) -> Option<(usize, usize, LinkTarget)> {
         let pane = self.pane(id)?;
+        if let Some(marked) = self.marked_link_under(id, point) {
+            return Some(marked);
+        }
         let text = pane.terminal.screen().row_text(point.row);
         let link = link_at(&text, point.col as usize)?;
 
@@ -34,6 +46,34 @@ impl Session {
             self.resolve(id, path)?;
         }
         Some((link.start, link.end, link.target))
+    }
+
+    /// A link the program itself marked, with the target it gave.
+    fn marked_link_under(&self, id: PaneId, point: Point) -> Option<(usize, usize, LinkTarget)> {
+        let pane = self.pane(id)?;
+        let (start, end, target) = pane.terminal.screen().marked_link(point.row, point.col)?;
+        let target = self.target_from(id, target)?;
+        Some((start, end, target))
+    }
+
+    /// What a marked target means here, or nothing when it is not ours to
+    /// open.
+    ///
+    /// A `file://` target is handed to the editor rather than the desktop,
+    /// which is what a build tool marking a source file wants, and it has to
+    /// be a file that is there for the same reason a guessed path does.
+    fn target_from(&self, id: PaneId, target: &str) -> Option<LinkTarget> {
+        match marked_target(target)? {
+            MarkedLink::Url(url) => Some(LinkTarget::Url(url)),
+            MarkedLink::Path(path) => {
+                self.resolve(id, &path)?;
+                Some(LinkTarget::File {
+                    path,
+                    line: None,
+                    column: None,
+                })
+            }
+        }
     }
 
     /// Where a path in a pane's output actually is: beside the pane's
@@ -98,6 +138,61 @@ impl Session {
         }
         self.needs_draw = true;
     }
+}
+
+/// What caret will make of the target a program marked, before asking the
+/// filesystem anything.
+///
+/// The text that was marked can say whatever the program likes, so the
+/// target is read rather than trusted: a scheme nobody here recognises
+/// belongs to somebody else's idea of what a terminal should run, and a
+/// `file://` target on another machine names a file this one does not have,
+/// however well the path matches.
+pub fn marked_target(target: &str) -> Option<MarkedLink> {
+    if let Some(rest) = strip_prefix_ignoring_case(target, "file://") {
+        let (host, path) = rest.split_once('/')?;
+        if !host.is_empty() && !host.eq_ignore_ascii_case("localhost") {
+            return None;
+        }
+        let path = percent_decoded(&format!("/{path}"));
+        return (!path.is_empty()).then_some(MarkedLink::Path(path));
+    }
+    let known = OPENABLE.iter().any(|scheme| {
+        target.len() > scheme.len() && strip_prefix_ignoring_case(target, scheme).is_some()
+    });
+    known.then(|| MarkedLink::Url(target.to_owned()))
+}
+
+fn strip_prefix_ignoring_case<'a>(text: &'a str, prefix: &str) -> Option<&'a str> {
+    let head = text.get(..prefix.len())?;
+    head.eq_ignore_ascii_case(prefix)
+        .then(|| &text[prefix.len()..])
+}
+
+/// A `file://` path as the filesystem spells it.
+fn percent_decoded(path: &str) -> String {
+    let bytes = path.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut at = 0;
+    while at < bytes.len() {
+        let decoded = (bytes[at] == b'%' && at + 2 < bytes.len())
+            .then(|| {
+                let hex = std::str::from_utf8(&bytes[at + 1..at + 3]).ok()?;
+                u8::from_str_radix(hex, 16).ok()
+            })
+            .flatten();
+        match decoded {
+            Some(byte) => {
+                out.push(byte);
+                at += 3;
+            }
+            None => {
+                out.push(bytes[at]);
+                at += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 /// Hands a URL to whatever the desktop opens such things with.
