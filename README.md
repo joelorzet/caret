@@ -308,11 +308,16 @@ caret update             # is there a newer release?
 caret update --install   # fetch it, check it, put it in place
 ```
 
+Inside caret, `caret` is always on the path: a pane starts with the running
+binary's own directory in front of `PATH`, so an app bundle that installs
+nothing on the system still answers `caret update`.
+
 `--install` downloads the build for this machine, checks it against the
 published `SHA256SUMS` and refuses to install anything that does not match.
 On macOS it replaces the app bundle it is running from, on Linux the binary,
 and it says what to do next. The command palette has **Look for a newer
-release** for asking without leaving the terminal.
+release** and **Install the newer release**, so the whole thing is two key
+presses and no typing.
 
 The check sends caret's name and version and nothing else: no identifiers,
 nothing about the machine or the person at it, no token and no cookies. It
@@ -372,6 +377,7 @@ caret fonts [query]        list installed fonts, monospaced first
 caret config [show|example|init]
                            show settings, print a starter config, or write one
 caret update [--install]   see whether a newer release is out, and install it
+caret version              this build, also --version and -V
 caret layout               print the pane-tree geometry
 ```
 

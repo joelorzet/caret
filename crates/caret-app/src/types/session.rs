@@ -83,6 +83,8 @@ pub struct Session {
     /// An update check running in the background, and whether somebody
     /// asked for it rather than it being the daily one.
     pub(crate) update_check: Option<(std::sync::mpsc::Receiver<Outcome>, bool)>,
+    /// An install running in the background, and what it has to say.
+    pub(crate) update_install: Option<std::sync::mpsc::Receiver<Result<String, String>>>,
     pub(crate) message: String,
     /// The message as it was last seen, and when it stops being news.
     ///

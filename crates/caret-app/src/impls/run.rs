@@ -15,6 +15,7 @@ usage: caret [command]
   config [show|example|init]
                          show settings, print a starter config, or write one
   update [--install]     see whether a newer release is out, and install it
+  version                this build, also --version and -V
   layout                 print the pane-tree geometry
 ";
 
@@ -50,6 +51,10 @@ pub fn run() {
         }
         Some("layout") => {
             print!("{}", demo_layout());
+            0
+        }
+        Some("version") | Some("--version") | Some("-V") => {
+            println!("caret {}", env!("CARGO_PKG_VERSION"));
             0
         }
         Some("help") | Some("--help") | Some("-h") => {

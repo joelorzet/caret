@@ -19,7 +19,12 @@ and a patch never does.
   its checksum, and the file to fetch is chosen from the names the release
   lists rather than guessed at, so there is one place that decides what a
   build is called.
-- **Look for a newer release** in the command palette, for asking on demand.
+- **Look for a newer release** and **Install the newer release** in the
+  command palette, so updating is two key presses and no typing.
+- **`caret` works inside caret.** A pane starts with the running binary's
+  directory in front of `PATH`, so an app bundle that installs nothing on
+  the system can still be told `caret update`.
+- **`caret version`**, also `--version` and `-V`.
 
 ### Fixed
 
