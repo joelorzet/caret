@@ -18,18 +18,25 @@ impl Screen {
             .max(Screen::INITIAL_HISTORY.min(self.scrollback_limit))
             .min(self.scrollback_limit);
         let new_cap = rows as u32 + history_cap;
-        let keep = self.len.min(new_cap);
 
         // Where the cursor is counted from the very top, which is the one
         // position that has to survive: everything above it is what has been
         // written, everything below it is blank room the last resize left.
         let cursor_row = self.history_len() + self.cursor.y as u32;
 
+        // How much of the buffer is content. Every resize pads the length
+        // out to the new height, and that padding is not something anybody
+        // typed: counted as content, it becomes history the next time the
+        // window grows, and the prompt ends up stranded in the middle of the
+        // pane with blank rows above it.
+        let written = self.written_end(cursor_row);
+        let keep = written.min(new_cap);
+
         // Shrinking drops rows, and it must drop the blank ones below the
         // cursor before it touches anything written above it. Keeping the
         // last `rows` blindly threw the content away and kept the padding.
-        let wanted_end = (cursor_row + 1).max(rows as u32).min(self.len);
-        let first_kept = wanted_end.saturating_sub(keep).min(self.len - keep);
+        let wanted_end = (cursor_row + 1).max(rows as u32).min(written);
+        let first_kept = wanted_end.saturating_sub(keep).min(written - keep);
 
         let w = cols as usize;
         let mut cells = vec![Cell::EMPTY; new_cap as usize * w].into_boxed_slice();
@@ -83,5 +90,26 @@ impl Screen {
         self.saved_cursor.x = self.saved_cursor.x.min(cols - 1);
         self.saved_cursor.y = self.saved_cursor.y.min(rows - 1);
         self.all_dirty = true;
+    }
+
+    /// One past the last row holding anything, never above the cursor.
+    ///
+    /// Blank rows below the cursor are room, not content: either padding a
+    /// previous resize added to fill the screen, or space a program has not
+    /// drawn into yet. A program that is using the lower half of the screen
+    /// has not left it blank, so nothing it drew is trimmed.
+    fn written_end(&self, cursor_row: u32) -> u32 {
+        let floor = (cursor_row + 1).min(self.len);
+        let mut end = self.len;
+        while end > floor && self.row_is_blank(end - 1) {
+            end -= 1;
+        }
+        end
+    }
+
+    fn row_is_blank(&self, l: u32) -> bool {
+        self.logical_line(l)
+            .iter()
+            .all(|cell| cell.is_blank() && cell.bg == Color::DEFAULT)
     }
 }
