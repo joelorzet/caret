@@ -8,6 +8,12 @@ and a patch never does.
 
 ### Added
 
+- **Links in output can be opened.** URLs, and file paths that exist, with
+  the line and column a compiler puts after them. Hold the platform's
+  modifier and the link under the pointer underlines itself; click and a
+  URL opens in the browser and a file opens in `$EDITOR` at the right
+  line. A plain click still selects, and a word that merely looks like a
+  path is not offered.
 - **A paste that carries more than one line is shown before it is sent.**
   Pasting runs what you pasted, and a snippet copied from a web page can
   carry a trailing newline or a second line you did not notice. The panel

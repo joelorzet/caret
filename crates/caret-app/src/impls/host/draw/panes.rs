@@ -43,6 +43,10 @@ impl Session {
                     fg = self.theme.selection_fg;
                     bg = self.theme.selection_bg;
                 }
+                let mut flags = cell.flags;
+                if self.hovers_link(id, logical, x) {
+                    flags = flags.union(Flags::UNDERLINE);
+                }
                 surface.set(
                     rect.x + x,
                     rect.y + y,
@@ -50,7 +54,7 @@ impl Session {
                         ch: cell.ch,
                         fg,
                         bg,
-                        flags: cell.flags,
+                        flags,
                         round: Corners::NONE,
                         under: bg,
                     },

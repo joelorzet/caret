@@ -4,6 +4,7 @@ pub mod corners;
 pub mod draw;
 pub mod encode;
 pub mod input;
+pub mod links;
 pub mod mouse;
 pub mod mouse_input;
 pub mod palette;

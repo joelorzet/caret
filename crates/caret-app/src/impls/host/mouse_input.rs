@@ -195,6 +195,11 @@ impl Session {
 
         match event.kind {
             MouseKind::Press if event.button == MouseButton::Left => {
+                // Holding the modifier means open what is under the
+                // pointer rather than start selecting it.
+                if self.click_opens_link(id, point, event.mods) {
+                    return;
+                }
                 let clicks = self.click_count(&event);
                 let separators = self.config.terminal.word_separators.clone();
 
@@ -219,6 +224,7 @@ impl Session {
                 self.dragging = clicks == 1;
                 self.needs_draw = true;
             }
+            MouseKind::Motion if !self.dragging => self.track_link(id, point, event.mods),
             MouseKind::Motion if self.dragging => {
                 if let Some((owner, selection)) = self.selection.as_mut() {
                     if *owner == id {

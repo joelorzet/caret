@@ -39,6 +39,10 @@ pub struct Session {
     pub(crate) renaming: Option<String>,
     /// A paste waiting to be confirmed.
     pub(crate) pending_paste: Option<PendingPaste>,
+    /// The link under the pointer while the modifier is held: the pane,
+    /// the logical row, and the span on it. Drawn underlined, so there is
+    /// something to see before there is something to click.
+    pub(crate) hover_link: Option<(PaneId, u32, usize, usize)>,
     pub(crate) preview: Option<Preview>,
     pub(crate) autocomplete: Autocomplete,
     /// What names run something, for colouring only lines that would.
