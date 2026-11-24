@@ -74,23 +74,45 @@ fn a_needle_longer_than_the_row_finds_nothing() {
     assert!(s.search_all("abcdefghij", false).is_empty());
 }
 
-// A match is confined to one row, and a wrapped line is stored as several, so
-// an occurrence straddling the wrap is missed. Pinned here so the behaviour is
-// a known limitation rather than a surprise.
+// A line that filled the width is stored as several rows, and a phrase can
+// straddle the break. It is one line to the person reading it.
 #[test]
-fn a_match_across_a_wrap_is_not_found() {
+fn a_match_that_wraps_is_found() {
     let mut s = Screen::new(6, 3, 10);
     write(&mut s, "abcdefghij");
     assert!(s.is_wrapped(0));
-    assert!(
-        s.search_all("fg", false).is_empty(),
-        "f ends row 0, g starts row 1"
-    );
-    assert_eq!(
-        s.search_all("abcdef", false).len(),
-        1,
-        "within a row it is found"
-    );
+
+    let hits = s.search_all("fg", false);
+    assert_eq!(hits.len(), 1, "f ends row 0 and g starts row 1");
+    let (start, end) = hits[0];
+    assert_eq!((start.row, start.col), (0, 5));
+    assert_eq!((end.row, end.col), (1, 0), "the match ends on the next row");
+
+    assert_eq!(s.search_all("abcdef", false).len(), 1, "within a row too");
+    assert_eq!(s.search_all("cdefghi", false).len(), 1, "and across it");
+}
+
+// Three rows of one line: a phrase can cross both breaks.
+#[test]
+fn a_match_can_span_more_than_one_wrap() {
+    let mut s = Screen::new(4, 4, 10);
+    write(&mut s, "aaaaneedleaaa");
+
+    let hits = s.search_all("needle", false);
+    assert_eq!(hits.len(), 1);
+    let (start, end) = hits[0];
+    assert_eq!((start.row, start.col), (1, 0));
+    assert_eq!((end.row, end.col), (2, 1));
+}
+
+// Separate lines are separate: the end of one and the start of the next do
+// not make a phrase, however they look on screen.
+#[test]
+fn two_lines_are_not_one_line() {
+    let mut s = Screen::new(6, 3, 10);
+    write(&mut s, "abc\r\ndef");
+    assert!(!s.is_wrapped(0));
+    assert!(s.search_all("cd", false).is_empty());
 }
 
 #[test]

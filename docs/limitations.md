@@ -29,14 +29,6 @@ where macOS keeps them. Holding a slave descriptor open in the parent
 would fix it and is the obvious next step.
 *`caret-pty/src/impls/pty_pool.rs`*
 
-## Search
-
-**A match cannot span a wrapped line.** Search works on logical rows, and a
-line that filled the width is stored as several, so an occurrence straddling
-the boundary is missed. Pinned by
-`a_match_across_a_wrap_is_not_found`.
-*`caret-core/src/impls/screen/search.rs`*
-
 ## Rendering
 
 **The inline backend cannot use the font or Cmd settings.** `caret inline` draws

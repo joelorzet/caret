@@ -8,6 +8,9 @@ and a patch never does.
 
 ### Added
 
+- **Search finds a phrase that wraps.** A line that filled the width is
+  stored as several rows, and a match straddling the break was missed even
+  though it was on the screen. Search reads the logical line now.
 - **A line that runs through an alias or a shell function is coloured** like
   anything else that runs. The shell is asked once, in the background, what
   names it knows, and they join what is on `PATH`. A typo still stays plain,
