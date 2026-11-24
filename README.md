@@ -106,6 +106,7 @@ caret inline       # inside the terminal you are already in, for SSH
 | Split top and bottom | `cmd+D` or `ctrl+b "` |
 | Move between panes | `cmd+option+<arrow>` or `ctrl+b <arrow>` |
 | Open a tab | `cmd+t` or `ctrl+b c` |
+| Open another window | `cmd+n` |
 | Everything caret can do | `cmd+P` or `ctrl+b ?` |
 | Settings | `cmd+,` or `ctrl+b s` |
 | Themes | `cmd+T` or `ctrl+b T` |
@@ -238,6 +239,19 @@ shell, so lines using those read as unrecognised. Turn it off with
 
 As you type, the most recent matching command from your history is offered as
 ghost text; right accepts it, and down and up choose between matches.
+
+### More than one window
+
+`cmd+n` opens another window, starting in the directory of the pane you
+were in, the way a new split does. Each window has its own tabs, panes and
+focus, and its own size and display: dragging one to a screen of a
+different density re-rasterises it there.
+
+Closing the last pane in a window closes that window, and closing the last
+window quits. Quitting from any window hangs up every pane in all of them.
+The windows share one event loop and one set of rasterised glyphs, so a
+second window costs about 7MB, most of which is the frame buffer the
+compositor needs.
 
 ### Moving between commands
 

@@ -44,7 +44,8 @@ impl Action {
 
             Action::ApplyLayout(_) | Action::NextLayout => ActionGroup::Layouts,
 
-            Action::NewTab
+            Action::NewWindow
+            | Action::NewTab
             | Action::CloseTab
             | Action::NextTab
             | Action::PrevTab
@@ -101,6 +102,7 @@ impl Action {
             Action::RotatePanes(true) => "Move the panes round".into(),
             Action::RotatePanes(false) => "Move the panes round the other way".into(),
 
+            Action::NewWindow => "Open another window".into(),
             Action::NewTab => "Open a new tab".into(),
             Action::RenameTab => "Name this tab".into(),
             Action::CloseTab => "Close the current tab".into(),
@@ -165,6 +167,7 @@ impl Action {
             Action::RotatePanes(true) => "rotate_panes".into(),
             Action::RotatePanes(false) => "rotate_panes_back".into(),
 
+            Action::NewWindow => "new_window".into(),
             Action::NewTab => "new_tab".into(),
             Action::RenameTab => "rename_tab".into(),
             Action::CloseTab => "close_tab".into(),
@@ -240,6 +243,7 @@ impl Action {
             "rotate_panes" => Action::RotatePanes(true),
             "rotate_panes_back" => Action::RotatePanes(false),
 
+            "new_window" => Action::NewWindow,
             "new_tab" => Action::NewTab,
             "rename_tab" => Action::RenameTab,
             "close_tab" => Action::CloseTab,

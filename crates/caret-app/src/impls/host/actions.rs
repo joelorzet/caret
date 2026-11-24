@@ -93,6 +93,10 @@ impl Session {
                 self.apply_layout(&template)?;
             }
 
+            // Windows belong to the window layer, which looks for this
+            // on its way round the loop.
+            Action::NewWindow => self.wants_window = true,
+
             Action::RenameTab => self.open_rename(),
             Action::NewTab => {
                 // Read before the tab exists: opening one moves the focus to
@@ -180,7 +184,10 @@ impl Session {
                 self.message = " fetching the newer release...".into();
                 self.begin_update_install();
             }
-            Action::Quit => self.running = false,
+            Action::Quit => {
+                self.quitting = true;
+                self.running = false;
+            }
         }
         Ok(())
     }

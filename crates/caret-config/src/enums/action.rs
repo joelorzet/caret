@@ -35,6 +35,9 @@ pub enum Action {
     /// Step through the built-in layout presets.
     NextLayout,
 
+    /// Another window, with its own tabs and panes.
+    NewWindow,
+
     NewTab,
     /// Give the current tab a name of your own.
     RenameTab,

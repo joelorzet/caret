@@ -21,19 +21,53 @@ const POLL_INTERVAL: i32 = 100;
 
 impl Session {
     pub fn new() -> io::Result<Session> {
-        let loaded = Config::load();
-        let (themes, theme_warnings) = ThemeRegistry::load();
-        let theme = themes.resolve(&loaded.config.theme).clone();
+        Session::build(None)
+    }
 
-        let size = caret_pty::terminal_size()
-            .unwrap_or((loaded.config.window.cols, loaded.config.window.rows));
-        let chrome = loaded.config.chrome();
+    /// A session for another window, taking what the first one already
+    /// read from disk.
+    ///
+    /// The configuration, the themes and the list of commands on `PATH`
+    /// are the same for every window of one program, and finding them again
+    /// would mean walking `PATH` and parsing every theme a second time
+    /// while somebody waits for a window to appear.
+    pub fn beside(other: &Session, cwd: Option<std::path::PathBuf>) -> io::Result<Session> {
+        let mut session = Session::build(Some(Inherited {
+            config: other.config.clone(),
+            themes: other.themes.clone(),
+            commands: other.commands.clone(),
+        }))?;
+        session.native_window = other.native_window;
+        if let Some(cwd) = cwd.filter(|path| path.is_dir()) {
+            let first = session.workspace.active_pane();
+            let area = session.center_rect();
+            session.drop_pane(first);
+            session.spawn_shell(first, Some(cwd), area.w, area.h)?;
+        }
+        Ok(session)
+    }
+
+    fn build(inherited: Option<Inherited>) -> io::Result<Session> {
+        let (config, warnings, themes) = match inherited {
+            Some(ref from) => (from.config.clone(), Vec::new(), from.themes.clone()),
+            None => {
+                let loaded = Config::load();
+                let (themes, theme_warnings) = ThemeRegistry::load();
+                let warnings: Vec<String> =
+                    loaded.warnings.into_iter().chain(theme_warnings).collect();
+                (loaded.config, warnings, themes)
+            }
+        };
+        let theme = themes.resolve(&config.theme).clone();
+
+        let size = caret_pty::terminal_size().unwrap_or((config.window.cols, config.window.rows));
+        let chrome = config.chrome();
 
         let explorer_root = std::env::current_dir().unwrap_or_else(|_| "/".into());
-        let explorer = Explorer::new(explorer_root, loaded.config.sidebars.explorer.show_hidden);
+        let explorer = Explorer::new(explorer_root, config.sidebars.explorer.show_hidden);
 
         let mut session = Session {
-            config: loaded.config,
+            config,
             syntax: SyntaxPalette::derive(&theme),
             pixel_chrome: false,
             theme,
@@ -44,7 +78,10 @@ impl Session {
             chrome,
             explorer,
             agent: None,
-            commands: CommandIndex::from_path(),
+            commands: match inherited {
+                Some(ref from) => from.commands.clone(),
+                None => CommandIndex::from_path(),
+            },
             pane_numbers: Vec::new(),
             editing: Vec::new(),
             resize_settles: None,
@@ -82,9 +119,11 @@ impl Session {
             decoder: InputDecoder::default(),
             needs_draw: true,
             running: true,
+            wants_window: false,
+            quitting: false,
         };
 
-        let warnings = loaded.warnings.len() + theme_warnings.len();
+        let warnings = warnings.len();
         if warnings > 0 {
             session.message = format!(" {warnings} config problem(s): run `caret config`");
         }
@@ -646,6 +685,23 @@ impl Session {
 
     pub fn is_running(&self) -> bool {
         self.running
+    }
+
+    /// Whether this session stopping means the program stops, rather than
+    /// just this window.
+    pub fn is_quitting(&self) -> bool {
+        self.quitting
+    }
+
+    /// Where the focused pane is, which is where another window or another
+    /// split would start.
+    pub fn working_dir(&self) -> Option<std::path::PathBuf> {
+        self.inherited_cwd()
+    }
+
+    /// Whether another window was asked for, clearing the request.
+    pub fn took_window_request(&mut self) -> bool {
+        std::mem::take(&mut self.wants_window)
     }
 
     pub fn needs_draw(&self) -> bool {
