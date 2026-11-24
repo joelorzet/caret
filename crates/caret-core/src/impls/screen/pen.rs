@@ -29,8 +29,15 @@ impl Screen {
         &mut self.pen.flags
     }
 
+    /// Resets the colours and attributes, keeping the marked link.
+    ///
+    /// A link is opened and closed by its own escape, not by SGR, so a
+    /// program is free to change colour in the middle of one and usually
+    /// does.
     pub fn reset_pen(&mut self) {
+        let link = self.pen.link;
         self.pen = Cell::EMPTY;
+        self.pen.link = link;
     }
 
     #[inline]

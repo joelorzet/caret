@@ -31,6 +31,9 @@ pub struct Screen {
     /// Where each command's prompt began, counted from the very first row
     /// the pane ever had. Oldest first.
     pub(crate) prompts: Vec<u64>,
+    /// Where the links a program marked actually point. Empty until one
+    /// does, and never consulted when drawing: the cells carry the id.
+    pub(crate) links: LinkTable,
     pub(crate) scroll_offset: u32,
     pub(crate) scrollback_limit: u32,
 

@@ -8,6 +8,15 @@ and a patch never does.
 
 ### Added
 
+- **A link a program marks is carried, not just the ones caret finds.**
+  `OSC 8` says that a run of text is a link, with a target that need not be
+  the text: a clickable test name, or a file whose shown name is not its
+  path. The target rides in two bytes the cell had already padded out to,
+  so it survives scrolling, resizing and rewrapping, selecting it still
+  copies the text, and a screen with no marked links is not a byte bigger.
+  Only `http`, `https`, `mailto` and local `file://` targets are opened,
+  and the status line names the target rather than the text, because
+  marked text can claim to be anything.
 - **A long command that finishes in a pane you are not watching says so.**
   When a command takes longer than `notify_after` seconds, the status line
   reports it, and if you have moved to another pane or another window the

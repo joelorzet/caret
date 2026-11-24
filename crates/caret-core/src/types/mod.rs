@@ -3,6 +3,8 @@ pub mod color;
 pub mod cursor;
 pub mod cursor_style;
 pub mod flags;
+pub mod link_id;
+pub mod link_table;
 pub mod modes;
 pub mod point;
 pub mod rgb;

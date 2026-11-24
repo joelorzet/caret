@@ -20,6 +20,8 @@ pub use crate::types::color::*;
 pub use crate::types::cursor::*;
 pub use crate::types::cursor_style::*;
 pub use crate::types::flags::*;
+pub use crate::types::link_id::*;
+pub use crate::types::link_table::*;
 pub use crate::types::modes::*;
 pub use crate::types::point::*;
 pub use crate::types::rgb::*;

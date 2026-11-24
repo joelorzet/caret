@@ -29,6 +29,7 @@ impl Screen {
             len: rows as u32,
             dropped: 0,
             prompts: Vec::new(),
+            links: LinkTable::new(),
             scroll_offset: 0,
             scrollback_limit: scrollback,
             cursor: Cursor::default(),
@@ -90,6 +91,7 @@ impl Screen {
             + core::mem::size_of_val(&*self.meta)
             + core::mem::size_of_val(&*self.slots)
             + self.scratch.capacity() * 4
+            + self.links.bytes()
     }
 
     pub fn reset(&mut self) {

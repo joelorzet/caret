@@ -274,6 +274,15 @@ column if the text gives them, which is what a compiler error does. A plain
 click still places the cursor and selects, and a word that merely looks
 like a path is left alone.
 
+A program can also mark text as a link itself, with a target that need not
+be the text at all: a build tool offers a clickable test name, `ls
+--hyperlink` offers a file whose shown name is not its path. Those are
+believed over anything caret works out for itself, since the program knows
+what the text means. Because the text can then claim to be anything, the
+status line names the target rather than the text as it opens, and only
+`http`, `https`, `mailto` and this machine's own `file://` paths are opened
+at all.
+
 ### Mouse and clipboard
 
 Click focuses a pane or a tab, drag selects, double click takes a word, triple
