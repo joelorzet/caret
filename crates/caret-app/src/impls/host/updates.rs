@@ -59,6 +59,38 @@ impl Session {
         self.needs_draw = true;
     }
 
+    pub(crate) fn begin_update_install(&mut self) {
+        if self.update_install.is_some() {
+            return;
+        }
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = tx.send(match check(&current(), fetch_latest) {
+                Outcome::Newer(release) => install(&release),
+                Outcome::Current => Err(format!("caret {} is already the latest", current())),
+                Outcome::Unknown => Err(format!("could not reach {RELEASES}")),
+            });
+        });
+        self.update_install = Some(rx);
+    }
+
+    pub(crate) fn settle_update_install(&mut self) {
+        let Some(rx) = &self.update_install else {
+            return;
+        };
+        let done = match rx.try_recv() {
+            Ok(done) => done,
+            Err(mpsc::TryRecvError::Empty) => return,
+            Err(mpsc::TryRecvError::Disconnected) => Err("the install stopped early".into()),
+        };
+        self.update_install = None;
+        self.message = match done {
+            Ok(said) => format!(" {said}"),
+            Err(why) => format!(" {why}"),
+        };
+        self.needs_draw = true;
+    }
+
     /// True when the answer is already known and does not need asking for.
     fn report_what_the_last_check_found(&mut self) -> bool {
         let state = last_check();
@@ -72,7 +104,7 @@ impl Session {
     }
 
     fn announce_update(&mut self, version: &str) {
-        self.message = format!(" caret {version} is out: run `caret update --install`");
+        self.message = format!(" caret {version} is out: `caret update --install`, or the palette");
         self.needs_draw = true;
     }
 }

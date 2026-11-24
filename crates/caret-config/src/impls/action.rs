@@ -68,6 +68,7 @@ impl Action {
             | Action::EditConfig
             | Action::ReloadConfig
             | Action::CheckUpdates
+            | Action::InstallUpdate
             | Action::Quit => ActionGroup::General,
         }
     }
@@ -133,6 +134,7 @@ impl Action {
             Action::EditConfig => "Open the config file in your editor".into(),
             Action::ReloadConfig => "Reload the configuration file".into(),
             Action::CheckUpdates => "Look for a newer release".into(),
+            Action::InstallUpdate => "Install the newer release".into(),
             Action::Quit => "Quit".into(),
         }
     }
@@ -184,6 +186,7 @@ impl Action {
             Action::EditConfig => "edit_config".into(),
             Action::ReloadConfig => "reload_config".into(),
             Action::CheckUpdates => "check_updates".into(),
+            Action::InstallUpdate => "install_update".into(),
             Action::Quit => "quit".into(),
         }
     }
@@ -259,6 +262,7 @@ impl Action {
             "edit_config" => Action::EditConfig,
             "reload_config" => Action::ReloadConfig,
             "check_updates" => Action::CheckUpdates,
+            "install_update" => Action::InstallUpdate,
             "quit" => Action::Quit,
             _ => return None,
         })

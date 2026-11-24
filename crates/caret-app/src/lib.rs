@@ -19,6 +19,6 @@ pub use crate::impls::host::draw::{
 };
 pub use crate::impls::host::encode::encode_for_child;
 pub use crate::impls::host::palette::{group_rows, palette_rect};
-pub use crate::impls::host::session::assign_pane_numbers;
+pub use crate::impls::host::session::{assign_pane_numbers, path_with};
 pub use crate::impls::run::run;
 pub use crate::types::session::Session;

@@ -67,5 +67,7 @@ pub enum Action {
     ReloadConfig,
     /// Ask whether a newer release has been published.
     CheckUpdates,
+    /// Fetch and install it.
+    InstallUpdate,
     Quit,
 }
