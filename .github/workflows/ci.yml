@@ -76,7 +76,7 @@ jobs:
         run: cargo test --workspace --locked
 
   msrv:
-    name: minimum supported rust (1.87)
+    name: minimum supported rust
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
