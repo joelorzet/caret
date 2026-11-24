@@ -63,8 +63,8 @@ to.
 
 ### A released build
 
-Every tagged version publishes a macOS disk image for Apple silicon and for
-Intel, and a Linux x86_64 tarball, on the [releases
+Every tagged version publishes one macOS disk image, universal for Apple
+silicon and Intel, and a Linux x86_64 tarball, on the [releases
 page](https://github.com/joelorzet/caret/releases), with a `SHA256SUMS` file
 beside them. [CHANGELOG.md](CHANGELOG.md) says what is in each one.
 

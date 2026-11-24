@@ -37,21 +37,41 @@ impl Release {
 
 /// Picks a published file out of the names the release lists, rather than
 /// building a name the release workflow would also have to agree with.
+///
+/// A name that says the architecture wins. One that says nothing about any
+/// architecture is taken as covering every architecture, which is what a
+/// universal build is.
 pub fn pick_asset(listing: &str, os: &str, arch: &str) -> Option<String> {
     let flavour = FLAVOURS.iter().find(|f| f.rust_os == os)?;
-    let (_, arch_word) = ARCHITECTURE_WORDS.iter().find(|(rust, _)| *rust == arch)?;
+    let (_, wanted) = ARCHITECTURE_WORDS.iter().find(|(rust, _)| *rust == arch)?;
     let names: Vec<&str> = listing.lines().filter_map(file_named).collect();
 
-    flavour.endings_best_first.iter().find_map(|ending| {
-        names
-            .iter()
-            .find(|name| {
-                name.ends_with(ending)
-                    && name.contains(flavour.word_in_name)
-                    && name.contains(arch_word)
-            })
-            .map(|name| name.to_string())
-    })
+    for ending in flavour.endings_best_first {
+        let fitting = |exact: bool| {
+            names
+                .iter()
+                .find(|name| {
+                    name.ends_with(ending)
+                        && name.contains(flavour.word_in_name)
+                        && if exact {
+                            name.contains(wanted)
+                        } else {
+                            !mentions_an_architecture(name)
+                        }
+                })
+                .map(|name| name.to_string())
+        };
+        if let Some(name) = fitting(true).or_else(|| fitting(false)) {
+            return Some(name);
+        }
+    }
+    None
+}
+
+fn mentions_an_architecture(name: &str) -> bool {
+    ARCHITECTURE_WORDS
+        .iter()
+        .any(|(rust, word)| name.contains(rust) || name.contains(word))
 }
 
 pub fn hash_of(listing: &str, file: &str) -> Option<String> {
