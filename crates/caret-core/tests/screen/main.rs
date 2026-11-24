@@ -4,6 +4,7 @@ mod cursor;
 mod damage;
 mod editing;
 mod history;
+mod marks;
 mod memory;
 mod printing;
 mod reflow;

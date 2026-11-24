@@ -106,7 +106,11 @@ impl Screen {
     /// is about to be a different row.
     fn rewrap(&mut self, cols: u16, rows: u16) {
         let cursor_row = self.history_len() + self.cursor.y as u32;
-        let (mut lines, cursor_at) = self.take_lines(cursor_row);
+        let Taken {
+            mut lines,
+            starts,
+            cursor_at,
+        } = self.take_lines(cursor_row);
 
         // The cursor may sit past the end of its line, which is where a
         // prompt leaves it. It needs somewhere to be.
@@ -127,6 +131,7 @@ impl Screen {
         let Rewrapped {
             mut rows_out,
             mut cursor,
+            mut line_rows,
         } = lay_out(&lines, cols, cursor_at);
 
         // Older rows go first when there is more than there is room for.
@@ -135,6 +140,9 @@ impl Screen {
             rows_out.drain(..drop);
             if let Some(spot) = cursor.as_mut() {
                 spot.row = spot.row.saturating_sub(drop);
+            }
+            for row in line_rows.iter_mut() {
+                *row = row.saturating_sub(drop);
             }
         }
 
@@ -147,6 +155,20 @@ impl Screen {
                 meta[index].0 |= RowMeta::WRAPPED;
             }
         }
+
+        // Rebuilding the buffer renumbers every row, so the marks are
+        // renumbered with it: each one moves to the line it was on.
+        self.prompts = self
+            .prompts
+            .iter()
+            .filter_map(|marked| marked.checked_sub(self.dropped))
+            .filter_map(|old| {
+                let line = starts.partition_point(|start| *start as u64 <= old);
+                line_rows.get(line.checked_sub(1)?).map(|row| *row as u64)
+            })
+            .collect();
+        self.prompts.dedup();
+        self.dropped = 0;
 
         self.cells = cells;
         self.meta = meta;
@@ -179,13 +201,16 @@ impl Screen {
     /// Trailing blanks go: they are the width the line was written at, not
     /// something anybody typed, and keeping them would wrap a short line
     /// onto rows of nothing.
-    fn take_lines(&self, cursor_row: u32) -> (Vec<Vec<Cell>>, Option<(usize, usize)>) {
+    fn take_lines(&self, cursor_row: u32) -> Taken {
         let written = self.written_end(cursor_row);
         let mut lines: Vec<Vec<Cell>> = Vec::new();
+        // The row each line started on, so a mark can move with its line.
+        let mut starts: Vec<u32> = Vec::new();
         let mut cursor_at = None;
         let mut row = 0;
 
         while row < written {
+            starts.push(row);
             let mut cells: Vec<Cell> = Vec::new();
             let mut last = row;
             loop {
@@ -208,8 +233,13 @@ impl Screen {
 
         if lines.is_empty() {
             lines.push(Vec::new());
+            starts.push(0);
         }
-        (lines, cursor_at)
+        Taken {
+            lines,
+            starts,
+            cursor_at,
+        }
     }
 
     /// One past the last row holding anything, never above the cursor.
@@ -237,6 +267,15 @@ fn is_padding(cell: &Cell) -> bool {
     cell.is_blank() && cell.bg == Color::DEFAULT
 }
 
+/// The content pulled back apart into the lines it was written as.
+struct Taken {
+    lines: Vec<Vec<Cell>>,
+    /// The row each line started on, so a mark can move with its line.
+    starts: Vec<u32>,
+    /// The line the cursor is on and how far along it, if it is here.
+    cursor_at: Option<(usize, usize)>,
+}
+
 /// A row the layout produced, and whether its line goes on below it.
 struct Row {
     cells: Vec<Cell>,
@@ -252,6 +291,8 @@ struct Spot {
 struct Rewrapped {
     rows_out: Vec<Row>,
     cursor: Option<Spot>,
+    /// The row each line now starts on.
+    line_rows: Vec<usize>,
 }
 
 /// Breaks lines into rows of `cols`, saying which rows continue.
@@ -262,8 +303,10 @@ fn lay_out(lines: &[Vec<Cell>], cols: u16, cursor_at: Option<(usize, usize)>) ->
     let width = cols as usize;
     let mut rows: Vec<Row> = Vec::new();
     let mut cursor = None;
+    let mut line_rows: Vec<usize> = Vec::new();
 
     for (index, line) in lines.iter().enumerate() {
+        line_rows.push(rows.len());
         let mut start = 0;
         loop {
             let mut end = (start + width).min(line.len());
@@ -291,5 +334,6 @@ fn lay_out(lines: &[Vec<Cell>], cols: u16, cursor_at: Option<(usize, usize)>) ->
     Rewrapped {
         rows_out: rows,
         cursor,
+        line_rows,
     }
 }

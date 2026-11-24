@@ -169,6 +169,8 @@ impl Session {
             Action::ShowThemes => self.open_palette(PaletteMode::Themes),
             Action::ShowSettings => self.open_palette(PaletteMode::Settings),
             Action::EditConfig => self.edit_config()?,
+            Action::PreviousCommand => self.jump_command(true),
+            Action::NextCommand => self.jump_command(false),
             Action::ReloadConfig => self.reload_config(),
             Action::CheckUpdates => {
                 self.message = " looking for a newer release...".into();

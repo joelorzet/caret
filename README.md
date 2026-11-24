@@ -239,6 +239,18 @@ shell, so lines using those read as unrecognised. Turn it off with
 As you type, the most recent matching command from your history is offered as
 ghost text; right accepts it, and down and up choose between matches.
 
+### Moving between commands
+
+When your shell marks where its prompt begins, `cmd+up` and `cmd+down`
+scroll to the previous and next command, which is what you want after a
+build has printed four hundred lines. A command that fails, or that takes
+more than a couple of seconds, says so in the status line: `exit 1 after
+12s`.
+
+caret reads the standard marks and asks for nothing: a shell that sends
+none behaves exactly as before. Most shell integrations emit them already;
+in zsh, a `precmd` that prints `\e]133;A\a` is enough to get the jumps.
+
 ### Links you can open
 
 A URL in output, or a file path that exists, is something to click: hold

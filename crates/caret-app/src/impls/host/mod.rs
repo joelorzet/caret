@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod clipboard;
+pub mod commands;
 pub mod corners;
 pub mod draw;
 pub mod encode;
