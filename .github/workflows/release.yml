@@ -32,6 +32,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # A tag that has published is a download somebody may already have.
+      # Moving it would replace that download with different code under the
+      # same name, so a release that exists stops this one.
+      - name: The tag is not already released
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::$GITHUB_REF_NAME is already released, and a published tag is never moved"
+            echo "::error::cut the next patch version instead"
+            exit 1
+          fi
+
       - id: read
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
