@@ -4,6 +4,15 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## Unreleased
+
+### Fixed
+
+- **Panes start a login shell**, the way every other terminal does. Without
+  it a pane reads `.zshrc` but not `.zprofile`, which is where Homebrew and
+  most other installers write the PATH, so anything installed that way was
+  missing: `brew`, and every alias pointing at a tool it installed.
+
 ## 0.1.2
 
 ### Fixed

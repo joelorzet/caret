@@ -30,6 +30,9 @@ impl Pty {
         set_winsize(master.as_raw_fd(), spec.cols, spec.rows)?;
 
         let mut command = Command::new(&spec.program);
+        if let Some(name) = &spec.arg0 {
+            command.arg0(name);
+        }
         command
             .args(&spec.args)
             .stdin(Stdio::from(slave.try_clone()?))

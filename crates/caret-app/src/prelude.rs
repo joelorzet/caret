@@ -42,6 +42,7 @@ pub(crate) use crate::types::cursor_paint::*;
 pub(crate) use crate::types::divider_drag::*;
 pub(crate) use crate::types::input_decoder::*;
 pub(crate) use crate::types::key_press::*;
+pub(crate) use crate::types::launch::*;
 pub(crate) use crate::types::mouse_event::*;
 pub(crate) use crate::types::palette::*;
 pub(crate) use crate::types::palette_item::*;
