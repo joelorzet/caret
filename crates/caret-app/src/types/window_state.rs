@@ -42,4 +42,6 @@ pub struct WindowState {
     /// blinks for.
     pub(crate) typed_at: Instant,
     pub(crate) title: String,
+    /// What the panes had printed when this window last drew.
+    pub(crate) bytes_at_last_frame: usize,
 }

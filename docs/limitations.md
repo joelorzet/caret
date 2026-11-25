@@ -50,6 +50,16 @@ fire.
 blended into a `softbuffer` framebuffer. That is fast enough at a normal window
 size but does more work per frame than a GPU backend would at 4K.
 
+**A wake-up takes everything a pane has printed, not the first kilobyte.**
+A pty hands over a kilobyte or two at a time whatever size buffer it is
+given, so a full-screen redraw arrives in dozens of reads. Reading one per
+wake-up meant one per drawn frame: a 40KB redraw took about forty frames,
+appeared in instalments, and ran hundreds of times slower than the pane
+could print. Each wake-up now keeps reading until the pane goes quiet for
+2ms or 8ms have passed, which is under a frame and cannot hold up the
+keyboard. Measured on a 40KB burst: one drawn frame instead of forty.
+*`caret-app/src/impls/host/session.rs`*
+
 **A frame costs what it costs to hand over, not what it costs to draw.**
 Measured on a full-screen retina window: painting every glyph takes 1 to 3ms,
 and giving the finished buffer to the compositor takes **17 to 26ms**, because

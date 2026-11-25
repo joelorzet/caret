@@ -186,6 +186,7 @@ impl WindowApp {
             active_at: Instant::now(),
             typed_at: Instant::now(),
             title: String::new(),
+            bytes_at_last_frame: 0,
         });
         Ok(())
     }
@@ -307,7 +308,16 @@ impl WindowApp {
             }
         }
 
+        let present_started = std::time::Instant::now();
         let _ = buffer.present();
+        let total = state.session.bytes_in();
+        trace(&format!(
+            "frame: {} bytes since the last one, present {:.1}ms, {} total",
+            total.saturating_sub(state.bytes_at_last_frame),
+            present_started.elapsed().as_secs_f64() * 1000.0,
+            total
+        ));
+        state.bytes_at_last_frame = total;
         state.session.mark_drawn();
 
         let title = state.session.window_title();

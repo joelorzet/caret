@@ -4,6 +4,22 @@ Notable changes, newest first. Versions follow [semantic
 versioning](https://semver.org): until 1.0 a minor bump may change behaviour,
 and a patch never does.
 
+## Unreleased
+
+### Fixed
+
+- **A screenful of output arrives in one frame instead of forty.** A pty
+  hands over a kilobyte or two at a time however large a buffer it is
+  given, and caret read one of those per wake-up, which meant one per drawn
+  frame. A program that repaints the whole screen was therefore painted in
+  dozens of instalments: the new screen appeared over the old one a
+  kilobyte at a time, which read as tearing, and since every instalment
+  cost a frame handed to the compositor it was also hundreds of times
+  slower than the pane could print. A wake-up now takes everything
+  the panes have ready, stopping after 8ms so a pane that never stops
+  printing cannot hold up the keyboard. Measured on a 40KB burst in a real
+  window: one frame rather than forty.
+
 ## 0.3.0
 
 ### Added
