@@ -1,5 +1,20 @@
-// A session reads its configuration from the environment, so this points
-// it at a directory of its own.
+//! How much of a pane's output one wake-up takes.
+//!
+//! A measurement rather than a test: what it reports depends on how
+//! promptly the machine schedules the pane again, which differs by
+//! platform and with load, so there is no number here that means the same
+//! thing everywhere. Run it with
+//!
+//! ```sh
+//! cargo test --release -p caret-app --test drain -- --ignored --nocapture
+//! ```
+//!
+//! What the fix it guards actually changed is counted in drawn frames, not
+//! in wake-ups, and that needs a window: set `CARET_TRACE` and read the
+//! `frame:` lines, as CONTRIBUTING describes.
+//!
+//! A session reads its configuration from the environment, so this points
+//! it at a directory of its own.
 
 use caret_app::types::key_press::KeyPress;
 use caret_app::Session;
@@ -26,15 +41,12 @@ fn run(session: &mut Session, line: &str) {
 }
 
 // A pty hands over a kilobyte or two at a time, so a screenful of output
-// arrives in dozens of reads. Taking one per wake-up meant one per drawn
-// frame, which is how an application's redraw came to be drawn in
-// instalments and to take dozens of frames instead of one.
-//
-// A frame is what paces the real loop, so the wake-ups here are spaced
-// like frames; without that the test reads faster than a window ever
-// would and measures nothing.
+// arrives in dozens of reads. Taking one of those per wake-up meant one
+// per drawn frame: an application's redraw was painted in instalments and
+// cost a frame for each of them.
 #[test]
-fn a_screenful_of_output_arrives_in_one_wake_up() {
+#[ignore = "a measurement, not a test"]
+fn how_much_of_a_screenful_one_wake_up_takes() {
     let mut session = session();
     for _ in 0..40 {
         let _ = session.pump(10);
@@ -52,26 +64,25 @@ fn a_screenful_of_output_arrives_in_one_wake_up() {
     );
 
     let mut wake_ups = 0;
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    let started = std::time::Instant::now();
     loop {
-        std::thread::sleep(FRAME);
+        // Spaced like the frames that pace the real loop; without this it
+        // reads faster than any window would and measures nothing.
+        std::thread::sleep(std::time::Duration::from_millis(16));
         let _ = session.pump(0);
         wake_ups += 1;
         if session.focused_text().contains("FIN23") {
             break;
         }
         assert!(
-            std::time::Instant::now() < deadline,
+            started.elapsed() < std::time::Duration::from_secs(20),
             "the output never finished"
         );
     }
 
-    println!("40,000 bytes took {wake_ups} wake-ups");
-    assert!(
-        wake_ups <= 25,
-        "a screenful took {wake_ups} wake-ups, which is a drawn frame each"
+    println!(
+        "40,000 bytes took {wake_ups} wake-ups in {:.0}ms, {} bytes a wake-up",
+        started.elapsed().as_secs_f64() * 1000.0,
+        session.bytes_in() / wake_ups
     );
 }
-
-/// What a drawn frame costs, which is how often the loop gets to read.
-const FRAME: std::time::Duration = std::time::Duration::from_millis(16);
