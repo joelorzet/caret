@@ -97,10 +97,18 @@ A terminal cannot log to its own stdout, and a window is awkward to inspect, so
 there are two ways in:
 
 ```sh
-CARET_TRACE=/tmp/caret.log caret          # actions and spawns
+CARET_TRACE=/tmp/caret.log caret          # actions, spawns, and a line a frame
 CARET_SNAPSHOT=/tmp/shot.bmp \
 CARET_SNAPSHOT_KEYS='cmd+d,cmd+option+m' \
 CARET_SNAPSHOT_DELAY=2000 caret           # write one frame and exit
+```
+
+The trace writes a line for every frame drawn, saying how much the panes
+printed since the last one. That is how to tell whether an application's
+redraw is arriving in one frame or in instalments:
+
+```sh
+grep '^frame:' /tmp/caret.log | sort -t' ' -k2 -rn | head
 ```
 
 The snapshot is the buffer that was just painted, so colours can be measured

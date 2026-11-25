@@ -111,6 +111,8 @@ pub struct Session {
     /// Set when something in here asked for another window. The window
     /// layer owns windows, so this is left for it to find and clear.
     pub(crate) wants_window: bool,
+    /// Everything the panes have printed, counted for measurement.
+    pub(crate) bytes_in: usize,
     /// Whether stopping means the whole program rather than this window.
     /// Running out of panes closes a window; quitting ends everything.
     pub(crate) quitting: bool,

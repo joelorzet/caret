@@ -8,6 +8,24 @@ use crate::impls::host::draw::{agent_rect, dock_body, DOCK_HEADER};
 /// How still a drag has to be before the children are told the new size.
 const RESIZE_SETTLE: std::time::Duration = std::time::Duration::from_millis(80);
 
+/// How long one wake-up will spend taking what the panes have printed.
+///
+/// A pty hands over a kilobyte or three at a time, and a full-screen
+/// redraw is tens of kilobytes, so reading once per frame means watching
+/// an application's new screen arrive in instalments: it looks like
+/// tearing and it is slower than the pane can print by a factor of
+/// hundreds. Taking everything that is ready costs microseconds a
+/// kilobyte, which is nothing beside the frame it saves.
+///
+/// The budget is what stops a pane that never stops printing from holding
+/// up the keyboard. It is well under a frame, so nothing waits on it.
+const DRAIN_BUDGET: std::time::Duration = std::time::Duration::from_millis(8);
+
+/// How long to wait for the next instalment before deciding the pane has
+/// finished. A pane is scheduled again in tens of microseconds, so this is
+/// only ever reached when there is genuinely nothing more.
+const DRAIN_GRACE: i32 = 2;
+
 /// How long a message stays on the status line before it gives the line back.
 const MESSAGE_LIFE: std::time::Duration = std::time::Duration::from_secs(6);
 
@@ -121,6 +139,7 @@ impl Session {
             running: true,
             wants_window: false,
             quitting: false,
+            bytes_in: 0,
         };
 
         let warnings = warnings.len();
@@ -693,6 +712,25 @@ impl Session {
         self.quitting
     }
 
+    /// How many bytes the panes have printed, for measuring how much of a
+    /// burst a frame carries.
+    pub fn bytes_in(&self) -> usize {
+        self.bytes_in
+    }
+
+    /// What the focused pane is showing, as text.
+    pub fn focused_text(&self) -> String {
+        let Some(pane) = self.pane(self.workspace.active_pane()) else {
+            return String::new();
+        };
+        let screen = pane.terminal.screen();
+        let base = screen.history_len();
+        (0..screen.rows())
+            .map(|row| screen.row_text(base + row as u32))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     /// What the status line is currently saying, if anything.
     pub fn status_message(&self) -> &str {
         &self.message
@@ -752,13 +790,28 @@ impl Session {
         self.settle_update_install();
         self.settle_shell_names();
         self.settle_pty_sizes();
+
+        let deadline = std::time::Instant::now() + DRAIN_BUDGET;
         let mut events = Vec::new();
         let mut ready = Vec::new();
-        self.ptys.poll(timeout_ms, &[], &mut events, &mut ready)?;
-        let had = !events.is_empty();
-        for event in events {
-            self.on_pty_event(event);
+        let mut timeout = timeout_ms;
+        let mut had = false;
+        loop {
+            events.clear();
+            self.ptys.poll(timeout, &[], &mut events, &mut ready)?;
+            if events.is_empty() {
+                break;
+            }
+            had = true;
+            for event in events.drain(..) {
+                self.on_pty_event(event);
+            }
+            if std::time::Instant::now() >= deadline {
+                break;
+            }
+            timeout = DRAIN_GRACE;
         }
+
         if self.workspace.tabs().is_empty() {
             self.running = false;
         }
@@ -883,8 +936,21 @@ impl Session {
                 }
             }
 
-            for event in core::mem::take(&mut events) {
-                self.on_pty_event(event);
+            // Everything the panes have ready, not just the first
+            // instalment, for the same reason the window drains: a screen
+            // arriving in pieces is drawn in pieces.
+            let deadline = std::time::Instant::now() + DRAIN_BUDGET;
+            loop {
+                for event in events.drain(..) {
+                    self.on_pty_event(event);
+                }
+                if std::time::Instant::now() >= deadline {
+                    break;
+                }
+                self.ptys.poll(DRAIN_GRACE, &[], &mut events, &mut ready)?;
+                if events.is_empty() {
+                    break;
+                }
             }
 
             if self.workspace.tabs().is_empty() {
@@ -897,6 +963,7 @@ impl Session {
     fn on_pty_event(&mut self, event: PtyEvent) {
         match event {
             PtyEvent::Output { id, bytes } => {
+                self.bytes_in += bytes.len();
                 dump(id, &bytes);
                 let reply = match self.pane_mut(PaneId(id.0)) {
                     Some(pane) => pane.consume(&bytes),

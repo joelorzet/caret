@@ -4,8 +4,22 @@ use crate::prelude::*;
 use std::io;
 use std::os::fd::RawFd;
 
-/// Bytes read from one ready fd per wake-up.
+/// Bytes asked for in one read.
 const READ_CHUNK: usize = 65_536;
+
+/// How much of one pane's output a single wake-up will take.
+///
+/// A pty hands back about a kilobyte at a time however large a buffer it
+/// is given, so a full-screen redraw arrives in dozens of reads. Stopping
+/// after the first would hand the caller a fragment of the application's
+/// new frame, and drawing that paints the new screen half applied over the
+/// old one: the tearing you see when a table redraws. Everything ready is
+/// taken instead, so a frame shows one state of the screen or the next.
+///
+/// The cap is what keeps a pane that never stops printing from holding up
+/// the keyboard: at that point the reading stops and the window gets its
+/// turn, and the rest is waiting at the next wake-up.
+const READ_BUDGET: usize = 256 * 1024;
 
 /// How many chunks a pty may hand over on its way out.
 ///
@@ -147,16 +161,32 @@ impl PtyPool {
         for index in flagged {
             let (id, pty) = &mut self.ptys[index];
             let id = *id;
-            match pty.read(&mut self.scratch) {
-                Ok(0) => hung_up.push(id),
-                Ok(n) => out.push(PtyEvent::Output {
-                    id,
-                    bytes: self.scratch[..n].to_vec(),
-                }),
-                Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
-                Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
-                // A closed pty reports EIO rather than EOF on some platforms.
-                Err(_) => hung_up.push(id),
+            let mut taken: Vec<u8> = Vec::new();
+            loop {
+                match pty.read(&mut self.scratch) {
+                    Ok(0) => {
+                        hung_up.push(id);
+                        break;
+                    }
+                    Ok(n) => {
+                        taken.extend_from_slice(&self.scratch[..n]);
+                        if taken.len() >= READ_BUDGET {
+                            break;
+                        }
+                    }
+                    // Nothing more waiting, which is the usual way out.
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
+                    Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+                    // A closed pty reports EIO rather than EOF on some
+                    // platforms.
+                    Err(_) => {
+                        hung_up.push(id);
+                        break;
+                    }
+                }
+            }
+            if !taken.is_empty() {
+                out.push(PtyEvent::Output { id, bytes: taken });
             }
         }
 
